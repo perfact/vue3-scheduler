@@ -9,7 +9,7 @@
     }"
     data-x="0"
     data-y="0"
-    class="z-10 flex absolute draggable"
+    class="draggable"
     ref="elem"
   >
     <slot name="event" :event="event" />
@@ -187,8 +187,16 @@ export default defineComponent({
   },
 });
 </script>
-<style>
+<style scoped>
 .event {
   transition: width 0.05s linear;
+  z-index: 10;
+  position: absolute;
+  display: flex;
+}
+
+.draggable {
+  touch-action: none;
+  user-select: none;
 }
 </style>

@@ -311,8 +311,10 @@ export default defineComponent({
       timelineEvent.end = new Date(
         timelineEvent.end.setMinutes(timelineEvent.end.getMinutes() + minutes)
       );
+      console.debug({x, y, timelineEvent});
 
-      timelineEvent.identiferIdx += Math.floor(y / rowHeight.value);
+      const newIx = timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
+      timelineEvent.identiferIdx = Math.min(Math.max(0, newIx), props.identifiers.length);
     }
     /**
      * Scroll to zoom in and out
@@ -438,12 +440,7 @@ export default defineComponent({
   },
 });
 </script>
-<style>
-.draggable {
-  touch-action: none;
-  user-select: none;
-}
-
+<style scoped>
 .dropzone.drop-target {
   background-color: rgb(213, 250, 213);
 }
