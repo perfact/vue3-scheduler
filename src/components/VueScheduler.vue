@@ -176,12 +176,12 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const cellWidth = ref(
-      props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth
-    );
-    const rowHeight = ref(
-      props.options?.rowHeight || DEFAULT_OPTIONS.rowHeight
-    );
+    const cellWidth = computed(
+      () => (props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth)
+    )
+    const rowHeight = computed(
+      () => (props.options?.rowHeight || DEFAULT_OPTIONS.cellWidth)
+    )
     const scale = ref(0.5);
     const scaleIngrement = ref(props.options?.scaleCustom || 0.5);
     const scrollDown = ref(0);
@@ -311,7 +311,6 @@ export default defineComponent({
       timelineEvent.end = new Date(
         timelineEvent.end.setMinutes(timelineEvent.end.getMinutes() + minutes)
       );
-      console.debug({x, y, timelineEvent});
 
       const newIx = timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
       timelineEvent.identiferIdx = Math.min(Math.max(0, newIx), props.identifiers.length);
