@@ -166,6 +166,7 @@ export default defineComponent({
       scaleCustom: 0.25,
       scrollSpeed: 5,
       timeFormat: "HH:mm",
+      dateFormat: "yyyy-MM-dd",
     });
 
     const newData = ref<Event[]>([

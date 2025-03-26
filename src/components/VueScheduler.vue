@@ -116,6 +116,7 @@
 import { computed, defineComponent, onMounted, PropType, ref } from "vue";
 import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
+import { format } from "date-fns";
 import Task from "./Task.vue";
 
 interface Event {
@@ -136,6 +137,7 @@ interface Options {
   scaleCustom?: number;
   scrollSpeed: number;
   timeFormat: string;
+  dateFormat: string;
 }
 
 const DEFAULT_OPTIONS: Options = {
@@ -144,6 +146,7 @@ const DEFAULT_OPTIONS: Options = {
   scaleUnit: "minutes",
   scrollSpeed: 5,
   timeFormat: "HH:mm",
+  dateFormat: "yyyy-MM-dd",
 };
 
 export default defineComponent({
@@ -211,11 +214,8 @@ export default defineComponent({
           date: i,
           // formattedTime: i.toLocaleTimeString(),
           // hh:mm am/pm
-          formattedDate: `${i.getDate()}/${i.getMonth() + 1}`,
-          formattedTime: i.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-          }),
+          formattedDate: format(i, props.options?.dateFormat || DEFAULT_OPTIONS.dateFormat),
+          formattedTime: format(i, props.options?.timeFormat || DEFAULT_OPTIONS.timeFormat),
         });
       }
 
