@@ -21,6 +21,10 @@
   </p>
 </p>
 
+> [!IMPORTANT]
+> This project is currently under a heavy rewrite, so the documentation stated
+> here does not reflect the functionality
+
 ## Table Of Contents
 
 - [About the Project](#about-the-project)
@@ -183,4 +187,4 @@ npm run dev
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](https://github.com/tony-nz/vue3-scheduler/blob/main/LICENSE.md) for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/Wiseqube/vue3-scheduler/blob/main/LICENSE.md) for more information.
