@@ -12,7 +12,9 @@
     class="draggable"
     ref="elem"
   >
-    <slot name="event" :event="event" />
+    <div class="event-content">
+      <slot name="event" :event="event" />
+    </div>
     <!-- resize handle -->
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -140,7 +142,8 @@ export default defineComponent({
                 position.x += event.dx;
                 position.y += event.dy;
 
-                event.target.style.transform = `translate(${position.x}px, ${position.y}px)`;
+                event.target.style.setProperty('--translate-x', `${position.x}px`);
+                event.target.style.setProperty('--translate-y', `${position.y}px`);
               },
               end: function (event) {
                 emit("dragged", {
@@ -150,7 +153,8 @@ export default defineComponent({
                 });
                 position.x = 0;
                 position.y = 0;
-                event.target.style.transform = `translate(${position.x}px, ${position.y}px)`;
+                event.target.style.setProperty('--translate-x', `${position.x}px`);
+                event.target.style.setProperty('--translate-y', `${position.y}px`);
               },
             },
             modifiers: [
@@ -193,6 +197,12 @@ export default defineComponent({
   z-index: 10;
   position: absolute;
   display: flex;
+  transform: translate(var(--translate-x, 0), var(--translate-y, 0))
+}
+
+.event-content {
+  position: sticky;
+  left: calc(-1 * var(--translate-x))
 }
 
 .draggable {

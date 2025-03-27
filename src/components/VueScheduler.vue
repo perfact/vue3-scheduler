@@ -446,5 +446,6 @@ export default defineComponent({
 
 #events {
   width: fit-content;
+  contain: paint;
 }
 </style>
