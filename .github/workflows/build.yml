@@ -37,28 +37,28 @@ jobs:
     - name: Print out parsed release version
       run: echo Parsed release version is:${{ steps.parser.outputs.version }}
     - name: Download Production Build Artefact
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: app-build
-        path: public
+        path: public/dist
     - name: Delete Production Build Artefact
-      uses: geekyeggo/delete-artifact@v1
+      uses: geekyeggo/delete-artifact@v5
       with:
         name: app-build
-    - name: Rename Production Build Artefact by inserting release version
-      run: mv "public/app-build.zip" "public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.zip"
+    - name: Package artifact for release 
+      run: tar -czvf "public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.tgz" -C "public/" dist 
     - name: Upload Renamed Production Build Artefact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: vue3-scheduler-${{ steps.parser.outpus.version }}-dist
-        path: public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.zip
+        path: public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.tgz
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
       with:
         name: Release v${{ steps.parser.outputs.version }}
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ env.release-version }}
-        artifacts: 'public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.zip'
+        artifacts: 'public/vue3-scheduler-${{ steps.parser.outputs.version }}-dist.tgz'
         allowUpdates: true
         omitBody: true
         removeArtifacts: true
