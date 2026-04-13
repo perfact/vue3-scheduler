@@ -7,7 +7,7 @@
     <!-- Headers + Identifers (first column) -->
     <div
       id="first-column"
-      class="w-[250px] border-r rounded-l-lg bg-gray-300 mr-px overflow-hidden overscroll-noner"
+      class="border-r rounded-l-lg bg-gray-300 mr-px overflow-hidden overscroll-noner min-w-fit"
     >
       <!-- Headers -->
       <div
@@ -17,9 +17,8 @@
         <div
           v-for="(header, index) in headers"
           :key="index"
-          class="grid w-full text-left items-center relative p-2.5 mr-px text-xs text-gray-100 bg-slate-500"
+          class="grid w-full text-left items-center relative p-2.5 mr-px text-xs text-gray-100 bg-slate-500 min-w-fit"
           :style="{
-            'min-width': `${cellWidth}px`,
             'min-height': `${rowHeight}px`,
             'max-height': `${rowHeight}px`,
           }"
@@ -40,9 +39,8 @@
           <div
             v-for="col in identifier"
             :key="col"
-            class="grid w-full text-left relative border-b p-2.5 mr-px bg-white text-xs text-gray-400 leading-10 text-medium"
+            class="grid w-full text-left relative border-b p-2.5 mr-px bg-white text-xs text-gray-400 leading-10 text-medium min-w-fit"
             :style="{
-              'min-width': `${cellWidth}px`,
               'min-height': `${rowHeight}px`,
               'max-height': `${rowHeight}px`,
             }"
@@ -56,7 +54,6 @@
     <div
       id="second-column"
       class="flex flex-col overflow-auto rounded-r-lg"
-      @wheel="onWheel"
     >
       <!-- Timeline -->
       <div
@@ -133,33 +130,13 @@ import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
 import Task from "./Task.vue";
-
-interface Event {
-  identiferIdx: number;
-  start: Date;
-  end: Date;
-  meta?: {
-    class?: string;
-    description?: string;
-    title?: string;
-  };
-}
-
-interface Options {
-  cellWidth: number;
-  rowHeight: number;
-  scaleUnit: string;
-  scaleCustom?: number;
-  scrollSpeed: number;
-  timeFormat: string;
-  dateFormat: string;
-}
+import { Options, Event } from "../types/VueScheduler";
+import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
 const DEFAULT_OPTIONS: Options = {
   cellWidth: 100,
   rowHeight: 50,
   scaleUnit: "minutes",
-  scrollSpeed: 5,
   timeFormat: "HH:mm",
   dateFormat: "yyyy-MM-dd",
 };
@@ -196,15 +173,12 @@ export default defineComponent({
   },
   setup(props) {
     const cellWidth = computed(
-      () => (props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth)
-    )
+      () => props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth,
+    );
     const rowHeight = computed(
-      () => (props.options?.rowHeight || DEFAULT_OPTIONS.cellWidth)
-    )
-    const scale = ref(0.5);
-    const scaleIngrement = ref(props.options?.scaleCustom || 0.5);
-    const scrollDown = ref(0);
-    const scrollUp = ref(0);
+      () => props.options?.rowHeight || DEFAULT_OPTIONS.cellWidth,
+    );
+    const scale = computed(() => props.options?.scale || 0.5);
     const dropzones = ref<Array<Target>>();
 
     /**
@@ -230,8 +204,14 @@ export default defineComponent({
           date: i,
           // formattedTime: i.toLocaleTimeString(),
           // hh:mm am/pm
-          formattedDate: format(i, props.options?.dateFormat || DEFAULT_OPTIONS.dateFormat),
-          formattedTime: format(i, props.options?.timeFormat || DEFAULT_OPTIONS.timeFormat),
+          formattedDate: format(
+            i,
+            props.options?.dateFormat || DEFAULT_OPTIONS.dateFormat,
+          ),
+          formattedTime: format(
+            i,
+            props.options?.timeFormat || DEFAULT_OPTIONS.timeFormat,
+          ),
         });
       }
 
@@ -242,41 +222,6 @@ export default defineComponent({
      * Get the timeline
      */
     const getTimeline = computed(() => generateTimeline());
-
-    /**
-     * Get event width
-     * @param start
-     * @param end
-     * @returns {number} Width of the event
-     */
-    function getEventWidth(start: Date, end: Date) {
-      const duration = (end.getTime() - start.getTime()) / 60000;
-      if (!cellWidth.value) return 0;
-
-      return (duration / 60 / scale.value) * cellWidth.value;
-    }
-
-    /**
-     * Get event left
-     * @param start
-     * @returns {number} Left position of the event
-     */
-    function getEventLeft(eventStart: Date) {
-      if (!cellWidth.value) return 0;
-      const start = new Date(props.start);
-      const timeDifference = (eventStart.getTime() - start.getTime()) / 60000;
-      const left = (timeDifference / 60 / scale.value) * cellWidth.value;
-      return left;
-    }
-
-    /**
-     * Get event row
-     * @param identiferIdx
-     * @returns {number} Top position of the event
-     */
-    function getEventRow(identiferIdx: number) {
-      return identiferIdx * rowHeight.value;
-    }
 
     function eventResized({
       event,
@@ -303,8 +248,8 @@ export default defineComponent({
       const startDateObject = timelineEvent.start;
       const endDateObject = new Date(
         new Date(startDateObject).setMinutes(
-          startDateObject.getMinutes() + minutes
-        )
+          startDateObject.getMinutes() + minutes,
+        ),
       );
       timelineEvent.end = endDateObject;
     }
@@ -321,72 +266,22 @@ export default defineComponent({
       const minutes = (x / cellWidth.value) * scale.value * 60.0; // convert width to time based on the scale
       timelineEvent.start = new Date(
         timelineEvent.start.setMinutes(
-          timelineEvent.start.getMinutes() + minutes
-        )
+          timelineEvent.start.getMinutes() + minutes,
+        ),
       );
       timelineEvent.end = new Date(
-        timelineEvent.end.setMinutes(timelineEvent.end.getMinutes() + minutes)
+        timelineEvent.end.setMinutes(timelineEvent.end.getMinutes() + minutes),
       );
 
-      const newIx = timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
-      timelineEvent.identiferIdx = Math.min(Math.max(0, newIx), props.identifiers.length);
-    }
-    /**
-     * Scroll to zoom in and out
-     * @param e
-     * @returns {void}
-     */
-    const onWheel = (event: WheelEvent) => {
-      if (event.deltaY < 0) {
-        scrollUp.value++;
-        if (scrollUp.value === props.options?.scrollSpeed) {
-          scale.value = Math.min(scale.value + scaleIngrement.value, 5); // Limit the scale to 5
-          scrollUp.value = 0;
+      const newIx =
+        timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
+      timelineEvent.identiferIdx = Math.min(
+        Math.max(0, newIx),
+        props.identifiers.length,
+      );
         }
-      }
-      if (event.deltaY > 0) {
-        scrollDown.value++;
-        if (scrollDown.value === props.options?.scrollSpeed) {
-          scale.value = Math.max(
-            scale.value - scaleIngrement.value,
-            props.options?.scaleCustom || 0.5
-          ); // Limit the scale to 0.5
-          scrollDown.value = 0;
-        }
-      }
-    };
-
-    const setScale = () => {
-      // check if custom scale is set
-      if (props.options?.scaleCustom) {
-        scale.value = props.options.scaleCustom;
-        return;
-      }
-
-      switch (props.options?.scaleUnit) {
-        case "minutes":
-          // if minute scroll by 0.5
-          scale.value = 0.5;
-          scaleIngrement.value = 0.5;
-          break;
-        case "hours":
-          // if hour scroll by 1.0
-          scale.value = 1.0;
-          scaleIngrement.value = 1.0;
-          break;
-        case "days":
-          // if day scroll by 24.0
-          scale.value = 24.0;
-          scaleIngrement.value = 24.0;
-          break;
-        default:
-          scale.value = 0.5;
-          scaleIngrement.value = 0.5;
-      }
-    };
 
     onMounted(() => {
-      setScale();
       if (dropzones.value !== undefined) {
         dropzones.value.forEach((value) =>
           interact(value)
@@ -398,7 +293,7 @@ export default defineComponent({
                 dropzone,
                 dropElement,
                 draggable,
-                draggableElement
+                draggableElement,
               ) {
                 const rect = dropzone.getRect(dropElement);
                 const dragRect = draggable.getRect(draggableElement);
@@ -443,11 +338,10 @@ export default defineComponent({
       cellWidth,
       rowHeight,
       getTimeline,
-      getEventWidth,
-      getEventLeft,
-      getEventRow,
+      getElemWidth,
+      getElemLeft,
+      getElemRow,
       scale,
-      onWheel,
       eventResized,
       eventDragged,
       dropzones,

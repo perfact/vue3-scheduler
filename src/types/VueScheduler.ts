@@ -1,24 +1,21 @@
-interface TimelineItem {
-  row: number;
-  background: string;
-  text: string;
-  start: string;
-  end: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta?: any;
+interface Event {
+  identiferIdx: number;
+  start: Date;
+  end: Date;
+  meta?: {
+    class?: string;
+    description?: string;
+    title?: string;
+  };
 }
 
-interface TimelineRow {
-  height: number;
-  marginTop: number;
-}
-
-interface TimelineOptions {
+interface Options {
   cellWidth: number;
-  row: TimelineRow;
-  scale: number;
-  start: string;
-  end: string;
+  rowHeight: number;
+  scaleUnit: string;
+  scale?: number;
+  timeFormat: string;
+  dateFormat: string;
 }
 
-export type { TimelineItem, TimelineOptions };
+export type { Event, Options };

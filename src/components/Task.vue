@@ -4,9 +4,9 @@
     :class="['event', event.meta?.class || 'bg-blue-500']"
     :style="{
       height: `${rowHeight}px`,
-      width: `${getEventWidth(event.start, event.end)}px`,
-      left: `${getEventLeft(event.start)}px`,
-      top: `${getEventRow(event.identiferIdx)}px`,
+      width: `${getElemWidth(event.start, event.end, cellWidth, scale)}px`,
+      left: `${getElemLeft(start, event.start, cellWidth, scale)}px`,
+      top: `${getElemRow(event.identiferIdx, rowHeight)}px`,
     }"
     data-x="0"
     data-y="0"
@@ -42,18 +42,9 @@
 import { defineComponent, PropType, ref } from "vue";
 import interact from "interactjs";
 import { Target } from "@interactjs/types";
-import { onMounted } from "vue";
-
-interface Event {
-  identiferIdx: number;
-  start: Date;
-  end: Date;
-  meta?: {
-    class?: string;
-    description?: string;
-    title?: string;
-  };
-}
+import { onMounted, watch } from "vue";
+import { Event } from "../types/VueScheduler";
+import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
 export default defineComponent({
   name: "Task",
@@ -84,41 +75,6 @@ export default defineComponent({
     const elem = ref<Target>();
     const position = { x: 0, y: 0 };
 
-    /**
-     * Get event width
-     * @param start
-     * @param end
-     * @returns {number} Width of the event
-     */
-    function getEventWidth(start: Date, end: Date) {
-      const duration = (end.getTime() - start.getTime()) / 60000;
-      if (!props.cellWidth) return 0;
-
-      return (duration / 60 / props.scale) * props.cellWidth;
-    }
-
-    /**
-     * Get event left
-     * @param start
-     * @returns {number} Left position of the event
-     */
-    function getEventLeft(eventStart: Date) {
-      if (!props.cellWidth) return 0;
-      const start = new Date(props.start);
-      const timeDifference = (eventStart.getTime() - start.getTime()) / 60000;
-      const left = (timeDifference / 60 / props.scale) * props.cellWidth;
-      return left;
-    }
-
-    /**
-     * Get event row
-     * @param identiferIdx
-     * @returns {number} Top position of the event
-     */
-    function getEventRow(identiferIdx: number) {
-      return identiferIdx * props.rowHeight;
-    }
-
     onMounted(() => {
       if (elem.value !== undefined) {
         interact(elem.value)
@@ -145,8 +101,14 @@ export default defineComponent({
                 position.x += event.dx;
                 position.y += event.dy;
 
-                event.target.style.setProperty('--translate-x', `${position.x}px`);
-                event.target.style.setProperty('--translate-y', `${position.y}px`);
+                event.target.style.setProperty(
+                  "--translate-x",
+                  `${position.x}px`,
+                );
+                event.target.style.setProperty(
+                  "--translate-y",
+                  `${position.y}px`,
+                );
               },
               end: function (event) {
                 emit("dragged", {
@@ -156,8 +118,14 @@ export default defineComponent({
                 });
                 position.x = 0;
                 position.y = 0;
-                event.target.style.setProperty('--translate-x', `${position.x}px`);
-                event.target.style.setProperty('--translate-y', `${position.y}px`);
+                event.target.style.setProperty(
+                  "--translate-x",
+                  `${position.x}px`,
+                );
+                event.target.style.setProperty(
+                  "--translate-y",
+                  `${position.y}px`,
+                );
               },
             },
             modifiers: [
@@ -185,10 +153,43 @@ export default defineComponent({
       }
     });
 
+    watch(
+      () => props.cellWidth,
+      (oldValue, newValue) => {
+        if (oldValue == newValue) {
+          return;
+        }
+
+        if (elem.value === undefined) {
+          return;
+        }
+
+        interact(elem.value).draggable().modifiers = [
+          interact.modifiers.snap({
+            targets: [
+              interact.snappers.grid({
+                x: props.cellWidth || 100,
+                y: props.rowHeight || 50,
+              }),
+            ],
+            range: Infinity,
+            relativePoints: [{ x: 0, y: 0 }],
+            offset: "parent",
+            endOnly: true,
+          }),
+          interact.modifiers.restrict({
+            restriction: "parent",
+            elementRect: { top: 0, left: 0, bottom: 1, right: 0 },
+            endOnly: false,
+          }),
+        ];
+      },
+    );
+
     return {
-      getEventWidth,
-      getEventLeft,
-      getEventRow,
+      getElemWidth,
+      getElemLeft,
+      getElemRow,
       elem,
     };
   },
@@ -200,12 +201,12 @@ export default defineComponent({
   z-index: 10;
   position: absolute;
   display: flex;
-  transform: translate(var(--translate-x, 0), var(--translate-y, 0))
+  transform: translate(var(--translate-x, 0), var(--translate-y, 0));
 }
 
 .event-content {
   position: sticky;
-  left: calc(-1 * var(--translate-x))
+  left: calc(-1 * var(--translate-x));
 }
 
 .draggable {

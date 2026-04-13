@@ -1,12 +1,40 @@
 <template>
   <div>
+    <div class="max-w-sm mx-auto">
+      <div class="mb-5">
+        <label
+          for="cellWidth"
+          class="block mb-2.5 text-sm font-medium text-heading"
+        >cellWidth</label>
+        <input
+          id="cellWidth"
+          v-model="options.cellWidth"
+          class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+          type="number"
+          name="width"
+        >
+        <label
+          for="scale"
+          class="block mb-2.5 text-sm font-medium text-heading"
+        >Scale</label>
+        <input
+          id="scale"
+          v-model="options.scale"
+          class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+          type="number"
+          name="scale"
+          min="1"
+          step="1"
+        >
+      </div>
+    </div>
     <VueScheduler
-      :end="newEnd"
-      :events="newData"
+      :end="end"
+      :events="data"
       :headers="timelineHeaders"
       :identifiers="timelineItems"
-      :options="newOptions"
-      :start="newStart"
+      :options="options"
+      :start="start"
     >
       <template #event="{ event }">
         <div class="flex flex-col truncate p-2 text-xs text-white">
@@ -30,20 +58,8 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { TimelineItem, TimelineOptions } from "./types/VueScheduler";
 import VueScheduler from "./components/VueScheduler.vue";
-
-interface Event {
-  identiferIdx: number;
-  start: Date;
-  end: Date;
-  meta?: {
-    class?: string;
-    description?: string;
-    text?: string;
-    title?: string;
-  };
-}
+import { Event, Options } from "./types/VueScheduler";
 
 export default defineComponent({
   name: "App",
@@ -51,79 +67,6 @@ export default defineComponent({
     VueScheduler,
   },
   setup() {
-    /**
-     * Today's date
-     */
-    const start = new Date();
-    const end = new Date();
-
-    start.setDate(17);
-    start.setMonth(2);
-    start.setFullYear(2024);
-
-    end.setDate(17);
-    end.setMonth(2);
-    end.setFullYear(2024);
-
-    /**
-     * Add one day to the end date
-     */
-    end.setDate(end.getDate() + 1);
-
-    /**
-     * Timeline data
-     */
-    const timelineData = ref<TimelineItem[]>([
-      {
-        row: 0,
-        background: "bg-emerald-500",
-        text: "text-white",
-        start: "17/02/2024 01:00",
-        end: "17/02/2024 02:00",
-        meta: { title: "Event 1", description: "Event 1 description" },
-      },
-      {
-        row: 1,
-        background: "bg-orange-500",
-        text: "text-white",
-        start: "17/02/2024 01:00",
-        end: "17/02/2024 02:15",
-        meta: { title: "Event 2", description: "Event 2 description" },
-      },
-      {
-        row: 1,
-        background: "bg-purple-500",
-        text: "text-white",
-        start: "17/02/2024 02:00",
-        end: "17/02/2024 03:15",
-        meta: { title: "Event 3", description: "Event 3 description" },
-      },
-      {
-        row: 3,
-        background: "bg-orange-500",
-        text: "text-white",
-        start: "17/02/2024 02:24",
-        end: "17/02/2024 03:27",
-        meta: { title: "Event 4", description: "Event 4 description" },
-      },
-      {
-        row: 4,
-        background: "bg-orange-500",
-        text: "text-white",
-        start: "18/02/2024 02:24",
-        end: "18/02/2024 03:27",
-        meta: { title: "Event 5", description: "Event 5 description" },
-      },
-      {
-        row: 5,
-        background: "bg-orange-500",
-        text: "text-white",
-        start: "18/02/2024 02:24",
-        end: "19/02/2024 03:27",
-        meta: { title: "Event 6", description: "Event 6 description" },
-      },
-    ]);
-
     /**
      * Timeline headers
      */
@@ -143,41 +86,26 @@ export default defineComponent({
     ];
 
     /**
-     * Timeline options
-     */
-    const timelineOptions = ref<TimelineOptions>({
-      cellWidth: 50,
-      row: {
-        height: 81,
-        marginTop: 4,
-      },
-      scale: 0.5,
-      start: "17/02/2024 00:00",
-      end: "19/02/2024 23:59",
-    });
-
-    /**
      * Refactored data
      */
 
-    const newStart = new Date(2024, 1, 1, 0, 0);
-    const newEnd = new Date(2024, 1, 2, 23, 0);
+    const start = new Date(2024, 1, 1, 6, 0);
+    const end = new Date(2024, 1, 30, 23, 0);
 
-    const newOptions = ref({
-      cellWidth: 50,
+    const options = ref<Options>({
+      cellWidth: 150,
       rowHeight: 81,
       scaleUnit: "minutes",
-      scaleCustom: 0.25,
-      scrollSpeed: 5,
+      scale: 8,
       timeFormat: "HH:mm",
       dateFormat: "yyyy-MM-dd",
     });
 
-    const newData = ref<Event[]>([
+    const data = ref<Event[]>([
       {
         identiferIdx: 0,
-        start: new Date(2024, 1, 1, 1, 15),
-        end: new Date(2024, 1, 1, 2, 0),
+        start: new Date(2024, 1, 1, 6, 0),
+        end: new Date(2024, 1, 1, 14, 0),
         meta: {
           title: "Event 1",
           description: "Event 1 description",
@@ -197,14 +125,12 @@ export default defineComponent({
     ]);
 
     return {
-      timelineData,
       timelineHeaders,
       timelineItems,
-      timelineOptions,
-      newStart,
-      newEnd,
-      newOptions,
-      newData,
+      start,
+      end,
+      options,
+      data,
     };
   },
 });
