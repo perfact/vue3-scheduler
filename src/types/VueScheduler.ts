@@ -12,10 +12,15 @@ interface Event {
 interface Options {
   cellWidth: number;
   rowHeight: number;
-  scaleUnit: string;
   scale?: number;
   timeFormat: string;
   dateFormat: string;
 }
 
-export type { Event, Options };
+interface TimeSpan {
+  start: Date;
+  end: Date;
+  color: string;
+  timelines?: Array<number>;
+}
+export type { Event, Options, TimeSpan };

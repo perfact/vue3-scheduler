@@ -108,6 +108,22 @@
           ref="dropzones"
           class="flex dropzone"
         >
+          <!-- Timespans underneath the event grid -->
+          <template
+            v-for="(span, spanIdx) in spans"
+            :key="spanIdx"
+          >
+            <div
+              v-if="!span.timelines || span.timelines.includes(index)"
+              :class="['timespan', span.color]"
+              :style="{
+                height: `${rowHeight}px`,
+                width: `${getElemWidth(span.start, span.end, cellWidth, scale)}px`,
+                left: `${getElemLeft(start, span.start, cellWidth, scale)}px`,
+                top: `${index * rowHeight}px`,
+              }"
+            />
+          </template>
           <div
             v-for="(_time, timeIdx) in getTimeline"
             :key="timeIdx"
@@ -130,13 +146,12 @@ import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
 import Task from "./Task.vue";
-import { Options, Event } from "../types/VueScheduler";
+import { Options, Event, TimeSpan } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
 const DEFAULT_OPTIONS: Options = {
   cellWidth: 100,
   rowHeight: 50,
-  scaleUnit: "minutes",
   timeFormat: "HH:mm",
   dateFormat: "yyyy-MM-dd",
 };
@@ -169,6 +184,11 @@ export default defineComponent({
     start: {
       type: Date,
       required: true,
+    },
+    spans: {
+      type: Array<TimeSpan>,
+      required: false,
+      default: [],
     },
   },
   setup(props) {
@@ -279,7 +299,7 @@ export default defineComponent({
         Math.max(0, newIx),
         props.identifiers.length,
       );
-        }
+    }
 
     onMounted(() => {
       if (dropzones.value !== undefined) {
@@ -329,7 +349,7 @@ export default defineComponent({
             })
             .on("dropactivate", function (event) {
               event.target.classList.add("drop-activated");
-            })
+            }),
         );
       }
     });
@@ -354,8 +374,16 @@ export default defineComponent({
   background-color: rgb(213, 250, 213);
 }
 
+.dropzone.drop-target .timespan {
+  filter: saturate(0.75);
+}
+
 #events {
   width: fit-content;
   contain: paint;
+}
+
+.timespan {
+  position: absolute;
 }
 </style>

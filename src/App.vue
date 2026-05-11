@@ -35,6 +35,7 @@
       :identifiers="timelineItems"
       :options="options"
       :start="start"
+      :spans="timespans"
     >
       <template #event="{ event }">
         <div class="flex flex-col truncate p-2 text-xs text-white">
@@ -59,7 +60,7 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import VueScheduler from "./components/VueScheduler.vue";
-import { Event, Options } from "./types/VueScheduler";
+import { Event, Options, TimeSpan } from "./types/VueScheduler";
 
 export default defineComponent({
   name: "App",
@@ -95,7 +96,6 @@ export default defineComponent({
     const options = ref<Options>({
       cellWidth: 150,
       rowHeight: 81,
-      scaleUnit: "minutes",
       scale: 8,
       timeFormat: "HH:mm",
       dateFormat: "yyyy-MM-dd",
@@ -124,6 +124,20 @@ export default defineComponent({
       },
     ]);
 
+    const timespans = ref<TimeSpan[]>([
+      {
+        start: new Date(2024, 1, 2, 0, 28),
+        end: new Date(2024, 1, 3, 1, 8),
+        color: "bg-red-400",
+      },
+      {
+        start: new Date(2024, 1, 1, 1, 28),
+        end: new Date(2024, 1, 2, 4, 0),
+        color: "bg-emerald-800",
+        timelines: [0, 2],
+      },
+    ]);
+
     return {
       timelineHeaders,
       timelineItems,
@@ -131,6 +145,7 @@ export default defineComponent({
       end,
       options,
       data,
+      timespans,
     };
   },
 });
