@@ -141,7 +141,7 @@
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, onMounted, PropType, ref } from "vue";
+import { computed, defineComponent, onMounted, PropType, ref, isRef, watchEffect } from "vue";
 import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
@@ -301,58 +301,66 @@ export default defineComponent({
       );
     }
 
-    onMounted(() => {
-      if (dropzones.value !== undefined) {
-        dropzones.value.forEach((value) =>
-          interact(value)
-            .dropzone({
-              checker: function (
-                _dragEvent,
-                _event,
-                dropped,
-                dropzone,
-                dropElement,
-                draggable,
-                draggableElement,
-              ) {
-                const rect = dropzone.getRect(dropElement);
-                const dragRect = draggable.getRect(draggableElement);
-                if (dragRect && rect) {
-                  const cx = dragRect.left + rect.width / 2;
-                  const cy = dragRect.top + dragRect.height / 2;
-                  dropped =
-                    cx >= rect.left &&
-                    cx <= rect.right &&
-                    cy >= rect.top &&
-                    cy <= rect.bottom;
-                }
-                return dropped;
-              },
-              ondrop: function (event) {
-                const draggableElement = event.relatedTarget;
-                const dropzoneElement = event.target;
-                dropzoneElement.classList.remove("drop-target");
-                draggableElement?.classList.remove("-drop-possible");
-              },
-              ondragenter: function (event) {
-                const draggableElement = event.relatedTarget;
-                const dropzoneElement = event.target;
-                dropzoneElement.classList.add("drop-target");
-                draggableElement?.classList.add("-drop-possible");
-              },
-              ondragleave: function (event) {
-                const draggableElement = event.relatedTarget;
-                const dropzoneElement = event.target;
-                dropzoneElement.classList.remove("drop-target");
-                draggableElement?.classList.remove("-drop-possible");
-              },
-            })
-            .on("dropactivate", function (event) {
-              event.target.classList.add("drop-activated");
-            }),
+    watchEffect((onCleanup) => {
+      const zones = dropzones.value;
+      if (!zones?.length) return;
+
+      zones.forEach((value) =>
+        interact(value)
+          .dropzone({
+            checker: function (
+              _dragEvent,
+              _event,
+              dropped,
+              dropzone,
+              dropElement,
+              draggable,
+              draggableElement,
+            ) {
+              const rect = dropzone.getRect(dropElement);
+              const dragRect = draggable.getRect(draggableElement);
+              if (dragRect && rect) {
+                const cx = dragRect.left + rect.width / 2;
+                const cy = dragRect.top + dragRect.height / 2;
+                dropped =
+                  cx >= rect.left &&
+                  cx <= rect.right &&
+                  cy >= rect.top &&
+                  cy <= rect.bottom;
+              }
+              return dropped;
+            },
+            ondrop: function (event) {
+              const draggableElement = event.relatedTarget;
+              const dropzoneElement = event.target;
+              dropzoneElement.classList.remove("drop-target");
+              draggableElement?.classList.remove("-drop-possible");
+            },
+            ondragenter: function (event) {
+              const draggableElement = event.relatedTarget;
+              const dropzoneElement = event.target;
+              dropzoneElement.classList.add("drop-target");
+              draggableElement?.classList.add("-drop-possible");
+            },
+            ondragleave: function (event) {
+              const draggableElement = event.relatedTarget;
+              const dropzoneElement = event.target;
+              dropzoneElement.classList.remove("drop-target");
+              draggableElement?.classList.remove("-drop-possible");
+            },
+          })
+          .on("dropactivate", function (event) {
+            event.target.classList.add("drop-activated");
+          }),
         );
+
+        onCleanup(() => {
+          zones.forEach(el => {
+            interact(el).unset();
+          })
+        })
       }
-    });
+    );
 
     return {
       cellWidth,
