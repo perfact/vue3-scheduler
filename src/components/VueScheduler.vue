@@ -1,23 +1,19 @@
 <template>
   <div
-    id="vue3-scheduler"
-    class="grid h-full rounded-lg overflow-hidden overscroll-none bg-gray-100 p-3"
+    class="vs-scheduler"
     style="grid-template-areas: 'grid1 grid2 grid2 grid2 grid2 '"
   >
     <!-- Headers + Identifers (first column) -->
     <div
-      id="first-column"
-      class="border-r rounded-l-lg bg-gray-300 mr-px overflow-hidden overscroll-noner min-w-fit"
+      class="vs-first-col"
+      :style="{ gridTemplateColumns: `repeat(${headers.length}, auto)` }"
     >
       <!-- Headers -->
-      <div
-        id="headers"
-        class="flex border-b"
-      >
+      <div class="vs-headers">
         <div
           v-for="(header, index) in headers"
           :key="index"
-          class="grid w-full text-left items-center relative p-2.5 mr-px text-xs text-gray-100 bg-slate-500 min-w-fit"
+          class="vs-header-cell"
           :style="{
             'min-height': `${rowHeight}px`,
             'max-height': `${rowHeight}px`,
@@ -27,19 +23,16 @@
         </div>
       </div>
       <!-- Identifiers -->
-      <div
-        id="identifiers"
-        class="relative"
-      >
+      <div class="vs-identifiers">
         <div
           v-for="(identifier, index) in identifiers"
           :key="index"
-          class="flex flex-row w-full"
+          class="vs-identifier-row"
         >
           <div
             v-for="col in identifier"
             :key="col"
-            class="grid w-full text-left relative border-b p-2.5 mr-px bg-white text-xs text-gray-400 leading-10 text-medium min-w-fit"
+            class="vs-identifier-cell"
             :style="{
               'min-height': `${rowHeight}px`,
               'max-height': `${rowHeight}px`,
@@ -51,19 +44,13 @@
       </div>
     </div>
     <!-- Timeline + Events (second column) -->
-    <div
-      id="second-column"
-      class="flex flex-col overflow-auto rounded-r-lg"
-    >
+    <div class="vs-second-col">
       <!-- Timeline -->
-      <div
-        id="timeline"
-        class="flex border-b"
-      >
+      <div class="vs-timeline">
         <div
           v-for="time in getTimeline"
           :key="time.id"
-          class="overflow-hidden text-center items-center relative p-2.5 border-r bg-slate-500 text-xs text-gray-100"
+          class="vs-timeline-cell"
           :style="{
             'min-width': `${cellWidth}px`,
             'max-width': `${cellWidth}px`,
@@ -78,10 +65,7 @@
         </div>
       </div>
       <!-- Events -->
-      <div
-        id="events"
-        class="relative"
-      >
+      <div class="vs-events">
         <!-- events -->
         <Task
           v-for="(event, index) in events"
@@ -106,7 +90,7 @@
           v-for="(_row, index) in identifiers"
           :key="index"
           ref="dropzones"
-          class="flex dropzone"
+          class="dropzone"
         >
           <!-- Timespans underneath the event grid -->
           <template
@@ -115,7 +99,7 @@
           >
             <div
               v-if="!span.timelines || span.timelines.includes(index)"
-              :class="['timespan', span.color]"
+              :class="['vs-timespan', span.color]"
               :style="{
                 height: `${rowHeight}px`,
                 width: `${getElemWidth(span.start, span.end, cellWidth, scale)}px`,
@@ -127,7 +111,7 @@
           <div
             v-for="(_time, timeIdx) in getTimeline"
             :key="timeIdx"
-            class="timeslot text-center relative p-2.5 border-b border-gray-20 border-r text-xs text-white leading-10 text-medium"
+            class="vs-timeslot"
             :style="{
               'min-width': `${cellWidth}px`,
               'max-width': `${cellWidth}px`,
@@ -136,12 +120,19 @@
             }"
           />
         </div>
+        <!-- Row separators rendered above timespans (z-index: 2) but below events (z-index: 10) -->
+        <div
+          v-for="(_, index) in identifiers"
+          :key="`sep-${index}`"
+          class="vs-row-sep"
+          :style="{ top: `${(index + 1) * rowHeight - 1}px` }"
+        />
       </div>
     </div>
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, onMounted, PropType, ref, isRef, watchEffect } from "vue";
+import { computed, defineComponent, PropType, ref, watchEffect } from "vue";
 import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
@@ -201,17 +192,10 @@ export default defineComponent({
     const scale = computed(() => props.options?.scale || 0.5);
     const dropzones = ref<Array<Target>>();
 
-    /**
-     * Generate the timeline based on the scale
-     * @param scale
-     * @returns {Array} Array of strings representing the time slots
-     */
     function generateTimeline() {
       const timeSlots = [];
       const start = new Date(props.start);
       const end = new Date(props.end);
-
-      // convert scale from decimal to minutes
       const scaleInMinutes = scale.value * 60;
 
       for (
@@ -222,8 +206,6 @@ export default defineComponent({
         timeSlots.push({
           id: i.getTime(),
           date: i,
-          // formattedTime: i.toLocaleTimeString(),
-          // hh:mm am/pm
           formattedDate: format(
             i,
             props.options?.dateFormat || DEFAULT_OPTIONS.dateFormat,
@@ -238,9 +220,6 @@ export default defineComponent({
       return timeSlots;
     }
 
-    /**
-     * Get the timeline
-     */
     const getTimeline = computed(() => generateTimeline());
 
     function eventResized({
@@ -252,7 +231,7 @@ export default defineComponent({
     }) {
       const resolution = 15.0;
       const width = event.rect.width;
-      let minutes = Math.round((width / cellWidth.value) * scale.value * 60.0); // convert width to time based on the scale
+      let minutes = Math.round((width / cellWidth.value) * scale.value * 60.0);
 
       const distance = minutes % resolution;
       if (distance > resolution / 2) {
@@ -263,7 +242,6 @@ export default defineComponent({
       if (minutes < resolution) {
         minutes = resolution;
       }
-      // remove decimal from timeLength
 
       const startDateObject = timelineEvent.start;
       const endDateObject = new Date(
@@ -283,7 +261,7 @@ export default defineComponent({
       y: number;
       timelineEvent: Event;
     }) {
-      const minutes = (x / cellWidth.value) * scale.value * 60.0; // convert width to time based on the scale
+      const minutes = (x / cellWidth.value) * scale.value * 60.0;
       timelineEvent.start = new Date(
         timelineEvent.start.setMinutes(
           timelineEvent.start.getMinutes() + minutes,
@@ -357,8 +335,8 @@ export default defineComponent({
         onCleanup(() => {
           zones.forEach(el => {
             interact(el).unset();
-          })
-        })
+          });
+        });
       }
     );
 
@@ -378,20 +356,135 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.dropzone.drop-target {
-  background-color: rgb(213, 250, 213);
+.vs-scheduler *,
+.vs-scheduler *::before,
+.vs-scheduler *::after {
+  box-sizing: border-box;
 }
 
-.dropzone.drop-target .timespan {
-  filter: saturate(0.75);
+.vs-scheduler {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  height: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: #f3f4f6;
+  padding: 0.75rem;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
-#events {
+.vs-first-col {
+  display: grid;
+  column-gap: 1px;
+  align-content: start;
+  border-right: 1px solid #e5e7eb;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+  background-color: #d1d5db;
+  margin-right: 1px;
+  overflow: hidden;
+  min-width: fit-content;
+}
+
+.vs-headers {
+  display: contents;
+}
+
+.vs-header-cell {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 0.625rem;
+  color: #f3f4f6;
+  background-color: #64748b;
+  box-shadow: inset 0 -1px 0 0 #e5e7eb;
+}
+
+.vs-identifiers {
+  display: contents;
+}
+
+.vs-identifier-row {
+  display: contents;
+}
+
+.vs-identifier-cell {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 0.625rem;
+  background-color: #ffffff;
+  color: #9ca3af;
+  box-shadow: inset 0 -1px 0 0 #e5e7eb;
+}
+
+.vs-second-col {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.vs-timeline {
+  display: flex;
+  box-shadow: inset 0 -1px 0 0 #e5e7eb;
+}
+
+.vs-timeline-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  padding: 0.625rem;
+  border-right: 1px solid #e5e7eb;
+  background-color: #64748b;
+  color: #f3f4f6;
+  text-align: center;
+}
+
+.vs-events {
   width: fit-content;
   contain: paint;
 }
 
-.timespan {
+.dropzone {
+  display: flex;
+}
+
+.vs-row-sep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e5e7eb;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.dropzone.drop-target {
+  background-color: rgb(213, 250, 213);
+}
+
+.dropzone.drop-target .vs-timespan {
+  filter: saturate(0.75);
+}
+
+.vs-timeslot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0.625rem;
+  border-right: 1px solid #e5e7eb;
+  color: #ffffff;
+}
+
+.vs-timespan {
   position: absolute;
 }
 </style>

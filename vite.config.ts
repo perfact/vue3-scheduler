@@ -2,7 +2,6 @@ import { resolve } from 'path';
 import { defineConfig } from "vite";
 import eslintPlugin from "@nabla/vite-plugin-eslint";
 import vue from "@vitejs/plugin-vue";
-import scopeTailwind from "vite-plugin-scope-tailwind";
 
 // https://vitejs.dev/config/
 export default defineConfig({

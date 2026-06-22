@@ -1,9 +1,9 @@
 <template>
   <div
     ref="elem"
-    :class="['event', event.meta?.class || 'bg-blue-500']"
+    :class="['event', event.meta?.class]"
     :style="{
-      height: `${rowHeight}px`,
+      height: `${rowHeight - 1}px`,
       width: `${getElemWidth(event.start, event.end, cellWidth, scale)}px`,
       left: `${getElemLeft(start, event.start, cellWidth, scale)}px`,
       top: `${getElemRow(event.identiferIdx, rowHeight)}px`,
@@ -22,17 +22,17 @@
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 192 512"
-      class="absolute right-0 h-4 w-4 resize-handle"
+      class="resize-handle"
       :style="{
         top: `${rowHeight / 3}px`,
       }"
     >
       <path
-        class="opacity-40 fill-white"
+        class="resize-handle-path"
         d="M0 64C0 46.33 14.33 32 32 32C49.67 32 64 46.33 64 64V448C64 465.7 49.67 480 32 480C14.33 480 0 465.7 0 448V64z"
       />
       <path
-        class="opacity-40 fill-white"
+        class="resize-handle-path"
         d="M128 64C128 46.33 142.3 32 160 32C177.7 32 192 46.33 192 64V448C192 465.7 177.7 480 160 480C142.3 480 128 465.7 128 448V64z"
       />
     </svg>
@@ -202,6 +202,7 @@ export default defineComponent({
   position: absolute;
   display: flex;
   transform: translate(var(--translate-x, 0), var(--translate-y, 0));
+  background-color: #3b82f6;
 }
 
 .event-content {
@@ -212,5 +213,17 @@ export default defineComponent({
 .draggable {
   touch-action: none;
   user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  height: 1rem;
+  width: 1rem;
+}
+
+.resize-handle-path {
+  opacity: 0.4;
+  fill: white;
 }
 </style>

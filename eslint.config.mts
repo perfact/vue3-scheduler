@@ -5,7 +5,6 @@ import pluginVue from "eslint-plugin-vue";
 import css from "@eslint/css";
 import { fileURLToPath } from "node:url";
 import { includeIgnoreFile } from "@eslint/compat";
-import { tailwind4 } from "tailwind-csstree";
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
@@ -30,9 +29,7 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
   { files: ["**/*.{js,mjs,cjs,ts,mts,cts}"], extends: [js.configs.recommended, tseslint.configs.recommended], languageOptions: { globals: globals.browser } },
   {
-    files: ["**/*.css"], language: "css/css", extends: [css.configs.recommended], languageOptions: {
-      customSyntax: tailwind4
-    },
+    files: ["**/*.css"], language: "css/css", extends: [css.configs.recommended], languageOptions: {},
     rules: {
       "css/no-empty-blocks": "error",
     },

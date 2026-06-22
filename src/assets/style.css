@@ -1,7 +1,4 @@
-@import "tailwindcss";
-
 body {
-  @apply bg-white;
-  @apply items-center;
-  @apply overflow-hidden;
+  background-color: #ffffff;
+  overflow: hidden;
 }

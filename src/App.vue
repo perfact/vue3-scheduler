@@ -1,26 +1,26 @@
 <template>
   <div>
-    <div class="max-w-sm mx-auto">
-      <div class="mb-5">
+    <div class="demo-controls">
+      <div class="demo-field">
         <label
           for="cellWidth"
-          class="block mb-2.5 text-sm font-medium text-heading"
+          class="demo-label"
         >cellWidth</label>
         <input
           id="cellWidth"
           v-model="options.cellWidth"
-          class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+          class="demo-input"
           type="number"
           name="width"
         >
         <label
           for="scale"
-          class="block mb-2.5 text-sm font-medium text-heading"
+          class="demo-label"
         >Scale</label>
         <input
           id="scale"
           v-model="options.scale"
-          class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+          class="demo-input"
           type="number"
           name="scale"
           min="1"
@@ -38,17 +38,17 @@
       :spans="timespans"
     >
       <template #event="{ event }">
-        <div class="flex flex-col truncate p-2 text-xs text-white">
-          <div class="font-bold">
+        <div class="event-body">
+          <div class="event-title">
             {{ event.meta?.title }}
           </div>
-          <div class="text-slate-200">
+          <div class="event-desc">
             {{ event.meta?.description }}
           </div>
-          <div class="text-slate-300">
+          <div class="event-time">
             {{ event.start.toLocaleString() }}
           </div>
-          <div class="text-slate-300">
+          <div class="event-time">
             {{ event.end.toLocaleString() }}
           </div>
         </div>
@@ -68,14 +68,8 @@ export default defineComponent({
     VueScheduler,
   },
   setup() {
-    /**
-     * Timeline headers
-     */
     const timelineHeaders = ref(["Route", "Start time"]);
 
-    /**
-     * Generate row data
-     */
     const timelineItems = [
       ["BMON-A", "08:00am"],
       ["BMON-B", "08:00am"],
@@ -85,10 +79,6 @@ export default defineComponent({
       ["BMON-F", "08:00am"],
       ["BMON-G", "08:00am"],
     ];
-
-    /**
-     * Refactored data
-     */
 
     const start = new Date(2024, 1, 1, 6, 0);
     const end = new Date(2024, 1, 30, 23, 0);
@@ -109,7 +99,7 @@ export default defineComponent({
         meta: {
           title: "Event 1",
           description: "Event 1 description",
-          class: "bg-emerald-500 rounded-md",
+          class: "event-emerald",
         },
       },
       {
@@ -119,7 +109,7 @@ export default defineComponent({
         meta: {
           title: "Event 2",
           description: "Event 2 description",
-          class: "bg-orange-500 rounded-md",
+          class: "event-orange",
         },
       },
     ]);
@@ -128,12 +118,12 @@ export default defineComponent({
       {
         start: new Date(2024, 1, 2, 0, 28),
         end: new Date(2024, 1, 3, 1, 8),
-        color: "bg-red-400",
+        color: "span-red",
       },
       {
         start: new Date(2024, 1, 1, 1, 28),
         end: new Date(2024, 1, 2, 4, 0),
-        color: "bg-emerald-800",
+        color: "span-green",
         timelines: [0, 2],
       },
     ]);
@@ -150,3 +140,94 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.demo-controls {
+  max-width: 24rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.demo-field {
+  margin-bottom: 1.25rem;
+}
+
+.demo-label {
+  display: block;
+  margin-bottom: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.demo-input {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: #f9fafb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0.75rem;
+}
+
+.demo-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.event-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: #ffffff;
+}
+
+.event-title {
+  font-weight: 700;
+}
+
+.event-desc {
+  color: #e2e8f0;
+}
+
+.event-time {
+  color: #cbd5e1;
+}
+</style>
+
+<!-- Non-scoped: demo page reset + classes applied inside child components -->
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.event-emerald {
+  background-color: #10b981;
+  border-radius: 0.375rem;
+}
+
+.event-orange {
+  background-color: #f97316;
+  border-radius: 0.375rem;
+}
+
+.span-red {
+  background-color: #f87171;
+}
+
+.span-green {
+  background-color: #065f46;
+}
+</style>
