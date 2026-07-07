@@ -42,7 +42,7 @@
 import { defineComponent, PropType, ref } from "vue";
 import interact from "interactjs";
 import { Target } from "@interactjs/types";
-import { onMounted, watch, watchEffect } from "vue";
+import { watchEffect } from "vue";
 import { Event } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
