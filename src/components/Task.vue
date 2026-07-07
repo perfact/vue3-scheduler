@@ -42,7 +42,7 @@
 import { defineComponent, PropType, ref } from "vue";
 import interact from "interactjs";
 import { Target } from "@interactjs/types";
-import { onMounted, watch } from "vue";
+import { onMounted, watch, watchEffect } from "vue";
 import { Event } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
@@ -75,117 +75,88 @@ export default defineComponent({
     const elem = ref<Target>();
     const position = { x: 0, y: 0 };
 
-    onMounted(() => {
-      if (elem.value !== undefined) {
-        interact(elem.value)
-          .resizable({
-            // resize from all edges and corners
-            edges: { left: false, right: true, bottom: false, top: false },
-            listeners: {
-              move(event) {
-                emit("resize", { event, timelineEvent: props.event });
-              },
+    watchEffect((onCleanup) => {
+      const element = elem.value;
+      if (!element) return;
+      interact(element)
+        .resizable({
+          // resize from all edges and corners
+          edges: { left: false, right: true, bottom: false, top: false },
+          listeners: {
+            move(event) {
+              emit("resize", { event, timelineEvent: props.event });
             },
-            modifiers: [
-              // keep the edges inside the parent
-              interact.modifiers.restrictEdges({
-                outer: "parent",
-              }),
-            ],
-            inertia: false,
-          })
-          .draggable({
-            origin: { x: 0, y: 0 },
-            listeners: {
-              move: function (event) {
-                position.x += event.dx;
-                position.y += event.dy;
+          },
+          modifiers: [
+            // keep the edges inside the parent
+            interact.modifiers.restrictEdges({
+              outer: "parent",
+            }),
+          ],
+          inertia: false,
+        })
+        .draggable({
+          origin: { x: 0, y: 0 },
+          listeners: {
+            move: function (event) {
+              position.x += event.dx;
+              position.y += event.dy;
 
-                event.target.style.setProperty(
-                  "--translate-x",
-                  `${position.x}px`,
-                );
-                event.target.style.setProperty(
-                  "--translate-y",
-                  `${position.y}px`,
-                );
-              },
-              end: function (event) {
-                emit("dragged", {
-                  timelineEvent: props.event,
-                  x: position.x,
-                  y: position.y,
-                });
-                position.x = 0;
-                position.y = 0;
-                event.target.style.setProperty(
-                  "--translate-x",
-                  `${position.x}px`,
-                );
-                event.target.style.setProperty(
-                  "--translate-y",
-                  `${position.y}px`,
-                );
-              },
+              event.target.style.setProperty(
+                "--translate-x",
+                `${position.x}px`,
+              );
+              event.target.style.setProperty(
+                "--translate-y",
+                `${position.y}px`,
+              );
             },
-            modifiers: [
-              interact.modifiers.snap({
-                targets: [
-                  interact.snappers.grid({
-                    x: props.cellWidth || 100,
-                    y: props.rowHeight || 50,
-                  }),
-                ],
-                range: Infinity,
-                relativePoints: [{ x: 0, y: 0 }],
-                offset: "parent",
-                endOnly: true,
-              }),
-              interact.modifiers.restrict({
-                restriction: "parent",
-                elementRect: { top: 0, left: 0, bottom: 1, right: 0 },
-                endOnly: false,
-              }),
-            ],
-            inertia: true,
-            autoScroll: true,
-          });
+            end: function (event) {
+              emit("dragged", {
+                timelineEvent: props.event,
+                x: position.x,
+                y: position.y,
+              });
+              position.x = 0;
+              position.y = 0;
+              event.target.style.setProperty(
+                "--translate-x",
+                `${position.x}px`,
+              );
+              event.target.style.setProperty(
+                "--translate-y",
+                `${position.y}px`,
+              );
+            },
+          },
+          modifiers: [
+            interact.modifiers.snap({
+              targets: [
+                interact.snappers.grid({
+                  x: props.cellWidth || 100,
+                  y: props.rowHeight || 50,
+                }),
+              ],
+              range: Infinity,
+              relativePoints: [{ x: 0, y: 0 }],
+              offset: "parent",
+              endOnly: true,
+            }),
+            interact.modifiers.restrict({
+              restriction: "parent",
+              elementRect: { top: 0, left: 0, bottom: 1, right: 0 },
+              endOnly: false,
+            }),
+          ],
+          inertia: true,
+          autoScroll: true,
+        });
+
+        onCleanup(() => {
+          interact(element).unset();
+        });
       }
-    });
-
-    watch(
-      () => props.cellWidth,
-      (oldValue, newValue) => {
-        if (oldValue == newValue) {
-          return;
-        }
-
-        if (elem.value === undefined) {
-          return;
-        }
-
-        interact(elem.value).draggable().modifiers = [
-          interact.modifiers.snap({
-            targets: [
-              interact.snappers.grid({
-                x: props.cellWidth || 100,
-                y: props.rowHeight || 50,
-              }),
-            ],
-            range: Infinity,
-            relativePoints: [{ x: 0, y: 0 }],
-            offset: "parent",
-            endOnly: true,
-          }),
-          interact.modifiers.restrict({
-            restriction: "parent",
-            elementRect: { top: 0, left: 0, bottom: 1, right: 0 },
-            endOnly: false,
-          }),
-        ];
-      },
     );
-
     return {
       getElemWidth,
       getElemLeft,

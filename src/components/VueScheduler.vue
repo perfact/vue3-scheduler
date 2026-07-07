@@ -190,6 +190,7 @@ export default defineComponent({
       () => props.options?.rowHeight || DEFAULT_OPTIONS.cellWidth,
     );
     const scale = computed(() => props.options?.scale || 0.5);
+    const resolution = computed(() => props.options?.resizeResolution || 15.0);
     const dropzones = ref<Array<Target>>();
 
     function generateTimeline() {
@@ -229,18 +230,17 @@ export default defineComponent({
       event: ResizeEvent;
       timelineEvent: Event;
     }) {
-      const resolution = 15.0;
       const width = event.rect.width;
       let minutes = Math.round((width / cellWidth.value) * scale.value * 60.0);
 
-      const distance = minutes % resolution;
-      if (distance > resolution / 2) {
-        minutes += resolution - distance;
+      const distance = minutes % resolution.value;
+      if (distance > resolution.value / 2) {
+        minutes += resolution.value - distance;
       } else {
         minutes -= distance;
       }
-      if (minutes < resolution) {
-        minutes = resolution;
+      if (minutes < resolution.value) {
+        minutes = resolution.value;
       }
 
       const startDateObject = timelineEvent.start;

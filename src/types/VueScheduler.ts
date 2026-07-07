@@ -15,6 +15,7 @@ interface Options {
   scale?: number;
   timeFormat: string;
   dateFormat: string;
+  resizeResolution?: number;
 }
 
 interface TimeSpan {
