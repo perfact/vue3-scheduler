@@ -19,14 +19,19 @@
     </div>
 
     <div class="vs-header-right">
-      <slot
-        name="header-right"
-        :get_elem_left="getElemLeft"
-        :get_elem_width="getElemWidth"
-        :start
-        :cell_width="cellWidth"
-        :scale
-      />
+      <div
+        class="vs-header-right-content"
+        :style="{ '--header-scroll-left': `-${scrollLeft}px` }"
+      >
+        <slot
+          name="header-right"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
+      </div>
     </div>
     <!-- Headers + Identifers (first column) -->
     <div
@@ -69,7 +74,10 @@
       </div>
     </div>
     <!-- Timeline + Events (second column) -->
-    <div class="vs-second-col">
+    <div
+      class="vs-second-col"
+      @scroll="onScroll"
+    >
       <!-- Timeline -->
       <div class="vs-timeline">
         <div
@@ -320,6 +328,13 @@ export default defineComponent({
       emit("event-activate", timelineEvent);
     }
 
+    // scrollLeft and onScroll are used to sync the header with the timeline
+    // events when scrolling
+    const scrollLeft = ref(0)
+    function onScroll(e: globalThis.Event) {
+      scrollLeft.value = (e.currentTarget as HTMLElement).scrollLeft
+    }
+
     watchEffect((onCleanup) => {
       const zones = dropzones.value;
       if (!zones?.length) return;
@@ -393,6 +408,8 @@ export default defineComponent({
       eventDragged,
       eventActivated,
       dropzones,
+      scrollLeft,
+      onScroll,
     };
   },
 });
@@ -544,6 +561,14 @@ export default defineComponent({
 
 .vs-header-right {
   grid-area: header-right;
+  overflow: hidden;
+  position: relative;
+}
+
+.vs-header-right-content {
+  width: fit-content;
+  transform: translateX(var(--header-scroll-left, 0px));
+  will-change: transform;
 }
 
 </style>
