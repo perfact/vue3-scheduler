@@ -273,32 +273,36 @@ export default defineComponent({
 
 <style scoped>
 .demo-controls {
-  max-width: 24rem;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
 .demo-field {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
   margin-bottom: 1.25rem;
 }
 
 .demo-label {
-  display: block;
-  margin-bottom: 0.625rem;
+  display: inline;
+  margin-bottom: 0;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .demo-input {
-  display: block;
-  width: 100%;
+  display: inline-block;
+  width: 6rem;
   padding: 0.625rem 0.75rem;
   font-size: 0.875rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   background-color: #f9fafb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0;
 }
 
 .demo-input:focus {
