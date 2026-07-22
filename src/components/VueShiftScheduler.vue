@@ -48,11 +48,45 @@
       </div>
     </template>
 
-    <!-- Visual lines for start/end of shifts -->
+    <!-- Visual lines for start/end of shifts in header column -->
     <template #header-border-lines="{ get_elem_left, get_elem_width, start, cell_width, scale}">
+      <div class="vs-shift-lines-header">
+        <slot
+          name="shift-header-border-lines"
+          :get_elem_left="get_elem_left"
+          :get_elem_width="get_elem_width"
+          :start
+          :cell_width
+          :scale
+        >
+          <div
+            v-for="(shift, index) in shifts"
+            :key="index"
+            class="vs-shift-line"
+            :style="{
+              '--shift-left': `${get_elem_left(start, shift.start, cell_width, scale)}px`,
+              '--shift-color': shift.color,
+            }"
+          />
+          
+          <div
+            v-for="(shift, index) in shifts"
+            :key="`end-${index}`"
+            class="vs-shift-line"
+            :style="{
+              '--shift-left': `${get_elem_left(start, shift.end, cell_width, scale)}px`,
+              '--shift-color': shift.color,
+            }"
+          />
+        </slot>
+      </div>
+    </template>
+
+    <!-- Visual lines for start/end of shifts in event columns-->
+    <template #event-border-lines="{ get_elem_left, get_elem_width, start, cell_width, scale}">
       <div class="vs-shift-lines">
         <slot
-          name="shift-border-lines"
+          name="shift-event-border-lines"
           :get_elem_left="get_elem_left"
           :get_elem_width="get_elem_width"
           :start
@@ -203,6 +237,16 @@ export default defineComponent({
 /* Styling for shift lines */
 .vs-shift-lines {
   position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.vs-shift-lines-header {
+  position: relative;
   left: 0;
   right: 0;
   top: 0;

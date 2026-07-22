@@ -80,6 +80,14 @@
     >
       <!-- Timeline -->
       <div class="vs-timeline">
+        <slot
+          name="header-border-lines"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
         <div
           v-for="time in getTimeline"
           :key="time.id"
@@ -98,18 +106,17 @@
         </div>
       </div>
 
-      <slot
-        name="header-border-lines"
-        :get_elem_left="getElemLeft"
-        :get_elem_width="getElemWidth"
-        :start
-        :cell_width="cellWidth"
-        :scale
-      />
-
       <!-- Events -->
       <div class="vs-events">
         <!-- events -->
+        <slot
+          name="event-border-lines"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
         <Task
           v-for="(event, index) in events"
           :key="index"
