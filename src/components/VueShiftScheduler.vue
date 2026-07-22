@@ -8,7 +8,7 @@
     :start="start"
     :spans="spans"
   >
-    <template #header-left>
+    <template #header-column-identifier>
       <div
         class="vs-shift-left-cell"
         :style="{ gridColumn: `1 / span ${headers.length}` }"
@@ -20,7 +20,7 @@
     </template>
 
 
-    <template #header-right="{ get_elem_left, get_elem_width, start, cell_width, scale}">
+    <template #header-column-timeline="{ get_elem_left, get_elem_width, start, cell_width, scale}">
       <div class="vs-shift-track">
         <slot
           name="shift-cells"
@@ -49,7 +49,7 @@
     </template>
 
     <!-- Visual lines for start/end of shifts in header column -->
-    <template #header-border-lines="{ get_elem_left, get_elem_width, start, cell_width, scale}">
+    <template #timeline-header="{ get_elem_left, get_elem_width, start, cell_width, scale}">
       <div class="vs-shift-lines-header">
         <slot
           name="shift-header-border-lines"
@@ -83,7 +83,7 @@
     </template>
 
     <!-- Visual lines for start/end of shifts in event columns-->
-    <template #event-border-lines="{ get_elem_left, get_elem_width, start, cell_width, scale}">
+    <template #timeline-body="{ get_elem_left, get_elem_width, start, cell_width, scale}">
       <div class="vs-shift-lines">
         <slot
           name="shift-event-border-lines"
@@ -246,6 +246,10 @@ export default defineComponent({
 }
 
 .vs-shift-lines-header {
+  /*Position is relative, because otherwise the lines would cover the tasks.
+  This is because the class vs-events has "contain: paint;" set, which creates
+  a new stacking context.
+  */
   position: relative;
   left: 0;
   right: 0;

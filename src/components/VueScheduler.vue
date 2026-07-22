@@ -9,7 +9,7 @@
   >
     <div class="vs-header-left">
       <slot
-        name="header-left"
+        name="header-column-identifier"
         :get_elem_left="getElemLeft"
         :get_elem_width="getElemWidth"
         :start
@@ -24,7 +24,7 @@
         :style="{ '--header-scroll-left': `-${scrollLeft}px` }"
       >
         <slot
-          name="header-right"
+          name="header-column-timeline"
           :get_elem_left="getElemLeft"
           :get_elem_width="getElemWidth"
           :start
@@ -81,7 +81,7 @@
       <!-- Timeline -->
       <div class="vs-timeline">
         <slot
-          name="header-border-lines"
+          name="timeline-header"
           :get_elem_left="getElemLeft"
           :get_elem_width="getElemWidth"
           :start
@@ -110,7 +110,7 @@
       <div class="vs-events">
         <!-- events -->
         <slot
-          name="event-border-lines"
+          name="timeline-body"
           :get_elem_left="getElemLeft"
           :get_elem_width="getElemWidth"
           :start
