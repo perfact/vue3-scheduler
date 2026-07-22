@@ -9,10 +9,7 @@
     :spans="spans"
   >
     <template #header-column-identifier>
-      <div
-        class="vs-shift-left-cell"
-        :style="{ gridColumn: `1 / span ${headers.length}` }"
-      >
+      <div class="vs-shift-left-cell">
         <slot name="shift-header-label">
           Schicht:
         </slot>

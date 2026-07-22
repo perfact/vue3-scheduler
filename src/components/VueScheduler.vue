@@ -1,12 +1,5 @@
 <template>
-  <div
-    class="vs-scheduler"
-    style="
-      grid-template-areas:
-        'header-left header-right'
-        'left right';
-    "
-  >
+  <div class="vs-scheduler">
     <div class="vs-header-left">
       <slot
         name="header-column-identifier"
@@ -442,7 +435,7 @@ export default defineComponent({
   font-size: 0.75rem;
   line-height: 1.5;
   grid-template-areas:
-    "shift-left shift-right"
+    "header-left header-right"
     "left       right";
 }
 
@@ -562,8 +555,7 @@ export default defineComponent({
 }
 
 .vs-header-left {
-  display: grid;
-  grid-template-columns: repeat(var(--header-count), auto);
+  grid-area: header-left;
 }
 
 .vs-header-right {
