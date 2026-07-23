@@ -7,6 +7,7 @@
     :options="options"
     :start="start"
     :spans="spans"
+    @event-activate="(event) => emit('event-activate', event)"
   >
     <template #header-column-identifier>
       <div class="vs-shift-left-cell">
@@ -177,10 +178,11 @@ export default defineComponent({
         },
     },
     emits: ["event-activate"],
-    setup() {
+    setup(_props, { emit }) {
         const slots = useSlots();
         return {
-            slots
+            slots,
+            emit
         };
     }
 })
