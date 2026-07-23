@@ -77,6 +77,7 @@
           :start="start"
           @resize="eventResized"
           @dragged="eventDragged"
+          @activate="eventActivated"
         >
           <template #event="slotData">
             <slot
@@ -182,7 +183,8 @@ export default defineComponent({
       default: [],
     },
   },
-  setup(props) {
+  emits: ["event-activate"],
+  setup(props, { emit }) {
     const cellWidth = computed(
       () => props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth,
     );
@@ -279,6 +281,10 @@ export default defineComponent({
       );
     }
 
+    function eventActivated(timelineEvent: Event) {
+      emit("event-activate", timelineEvent);
+    }
+
     watchEffect((onCleanup) => {
       const zones = dropzones.value;
       if (!zones?.length) return;
@@ -350,6 +356,7 @@ export default defineComponent({
       scale,
       eventResized,
       eventDragged,
+      eventActivated,
       dropzones,
     };
   },

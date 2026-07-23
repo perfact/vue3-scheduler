@@ -70,7 +70,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ["resize", "dragged"],
+  emits: ["resize", "dragged", "activate"],
   setup(props, { emit }) {
     const elem = ref<Target>();
     const position = { x: 0, y: 0 };
@@ -150,7 +150,8 @@ export default defineComponent({
           ],
           inertia: true,
           autoScroll: true,
-        });
+        })
+        .on("tap", () => emit("activate", props.event));
 
         onCleanup(() => {
           interact(element).unset();
