@@ -30,7 +30,7 @@ interface Shift {
   name: string;
   start: Date;
   end: Date;
-  color?: string;
+  color: string;
 }
 
 export type { Event, Options, TimeSpan, Shift };
