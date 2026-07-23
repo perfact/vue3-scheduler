@@ -176,6 +176,7 @@ export default defineComponent({
             default: () => [],
         },
     },
+    emits: ["event-activate"],
     setup() {
         const slots = useSlots();
         return {
