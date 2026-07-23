@@ -38,38 +38,9 @@
         >
       </div>
     </div>
-    <VueScheduler
-      v-if="!show_shifts"
-      :end="end"
-      :events="data"
-      :headers="timelineHeaders"
-      :identifiers="timelineItems"
-      :options="options"
-      :start="start"
-      :spans="timespans"
-      @event-activate="handle_event_activate"
-    >
-      <template #event="{ event }">
-        <div class="event-body">
-          <div class="event-label">
-            <div class="event-title">
-              {{ event.meta?.title }}
-            </div>
-            <div class="event-desc">
-              {{ event.meta?.description }}
-            </div>
-            <div class="event-time">
-              {{ event.start.toLocaleString() }}
-            </div>
-            <div class="event-time">
-              {{ event.end.toLocaleString() }}
-            </div>
-          </div>
-        </div>
-      </template>
-    </VueScheduler>
-    <template v-else>
-      <VueShiftScheduler
+    <div class="scheduler-demo">
+      <VueScheduler
+        v-if="!show_shifts"
         :end="end"
         :events="data"
         :headers="timelineHeaders"
@@ -77,7 +48,6 @@
         :options="options"
         :start="start"
         :spans="timespans"
-        :shifts="shifts"
         @event-activate="handle_event_activate"
       >
         <template #event="{ event }">
@@ -98,15 +68,46 @@
             </div>
           </div>
         </template>
-      </VueShiftScheduler>
-    </template>
+      </VueScheduler>
+      <template v-else>
+        <VueShiftScheduler
+          :end="end"
+          :events="data"
+          :headers="timelineHeaders"
+          :identifiers="timelineItems"
+          :options="options"
+          :start="start"
+          :spans="timespans"
+          :shifts="shifts"
+          @event-activate="handle_event_activate"
+        >
+          <template #event="{ event }">
+            <div class="event-body">
+              <div class="event-title">
+                {{ event.meta?.title }}
+              </div>
+              <div class="event-desc">
+                {{ event.meta?.description }}
+              </div>
+              <div class="event-time">
+                {{ event.start.toLocaleString() }}
+              </div>
+              <div class="event-time">
+                {{ event.end.toLocaleString() }}
+              </div>
+            </div>
+          </template>
+        </VueShiftScheduler>
+      </template>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import VueScheduler from "./components/VueScheduler.vue";
-import { Event, Options, TimeSpan, Shift } from "./types/VueScheduler";
+import { Options, TimeSpan } from "./types/VueScheduler";
+import { Shift, ShiftEvent } from "./types/VueShiftScheduler";
 import VueShiftScheduler from "./components/VueShiftScheduler.vue";
 
 export default defineComponent({
@@ -136,12 +137,12 @@ export default defineComponent({
       rowHeight: 81,
       scale: 8,
       timeFormat: "HH:mm",
-      dateFormat: "yyyy-MM-dd",  
+      dateFormat: "yyyy-MM-dd",
     });
 
     const show_shifts = ref(false);
 
-    const data = ref<Event[]>([
+    const data = ref<ShiftEvent[]>([
       {
         identiferIdx: 0,
         start: new Date(2024, 1, 1, 6, 0),
@@ -151,16 +152,18 @@ export default defineComponent({
           description: "Event 1 description",
           class: "event-emerald",
         },
+        labortime: 8
       },
       {
         identiferIdx: 1,
-        start: new Date(2024, 1, 1, 3, 0),
-        end: new Date(2024, 1, 1, 5, 0),
+        start: new Date(2024, 1, 1, 10, 0),
+        end: new Date(2024, 1, 1, 18, 0),
         meta: {
           title: "Event 2",
           description: "Event 2 description",
           class: "event-orange",
         },
+        labortime: 16
       },
     ]);
 
@@ -385,5 +388,10 @@ html, body {
 
 .span-green {
   background-color: #065f46;
+}
+
+.scheduler-demo {
+  max-height: 90vh;
+  overflow-y: scroll;
 }
 </style>

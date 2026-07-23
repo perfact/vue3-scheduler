@@ -65,6 +65,11 @@
           </div>
         </div>
       </div>
+
+      <slot
+        name="additional-rows"
+        :row_height="rowHeight"
+      />
     </div>
     <!-- Timeline + Events (second column) -->
     <div
@@ -164,6 +169,18 @@
             }"
           />
         </div>
+
+        <slot
+          name="timeline-body-end"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :row_height="rowHeight"
+          :scale
+          :timeline="getTimeline"
+        />
+
         <!-- Row separators rendered above timespans (z-index: 2) but below events (z-index: 10) -->
         <div
           v-for="(_, index) in identifiers"
@@ -320,7 +337,7 @@ export default defineComponent({
         timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newIx),
-        props.identifiers.length,
+        props.identifiers.length - 1,
       );
     }
 

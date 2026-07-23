@@ -1,3 +1,7 @@
+/**
+ * @prop start - Start time of the event
+ * @prop end - End time of the event
+ */
 interface Event {
   identiferIdx: number;
   start: Date;
@@ -25,12 +29,5 @@ interface TimeSpan {
   timelines?: Array<number>;
 }
 
-interface Shift {
-  id: number,
-  name: string;
-  start: Date;
-  end: Date;
-  color: string;
-}
 
-export type { Event, Options, TimeSpan, Shift };
+export type { Event, Options, TimeSpan };
