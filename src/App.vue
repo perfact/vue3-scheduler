@@ -47,6 +47,7 @@
       :options="options"
       :start="start"
       :spans="timespans"
+      @event-activate="handle_event_activate"
     >
       <template #event="{ event }">
         <div class="event-body">
@@ -75,6 +76,7 @@
         :start="start"
         :spans="timespans"
         :shifts="shifts"
+        @event-activate="handle_event_activate"
       >
         <template #event="{ event }">
           <div class="event-body">
@@ -256,6 +258,10 @@ export default defineComponent({
       },
     ]);
 
+    function handle_event_activate(event: Event) {
+      alert('Event "event-activate" emitted: ' + JSON.stringify(event));
+    }
+
     return {
       timelineHeaders,
       timelineItems,
@@ -266,6 +272,7 @@ export default defineComponent({
       timespans,
       shifts,
       show_shifts,
+      handle_event_activate,
     };
   },
 });
