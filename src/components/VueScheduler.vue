@@ -1,8 +1,31 @@
 <template>
-  <div
-    class="vs-scheduler"
-    style="grid-template-areas: 'grid1 grid2 grid2 grid2 grid2 '"
-  >
+  <div class="vs-scheduler">
+    <div class="vs-header-left">
+      <slot
+        name="header-column-identifier"
+        :get_elem_left="getElemLeft"
+        :get_elem_width="getElemWidth"
+        :start
+        :cell_width="cellWidth"
+        :scale
+      />
+    </div>
+
+    <div class="vs-header-right">
+      <div
+        class="vs-header-right-content"
+        :style="{ '--header-scroll-left': `-${scrollLeft}px` }"
+      >
+        <slot
+          name="header-column-timeline"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
+      </div>
+    </div>
     <!-- Headers + Identifers (first column) -->
     <div
       class="vs-first-col"
@@ -44,9 +67,20 @@
       </div>
     </div>
     <!-- Timeline + Events (second column) -->
-    <div class="vs-second-col">
+    <div
+      class="vs-second-col"
+      @scroll="onScroll"
+    >
       <!-- Timeline -->
       <div class="vs-timeline">
+        <slot
+          name="timeline-header"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
         <div
           v-for="time in getTimeline"
           :key="time.id"
@@ -64,9 +98,18 @@
           </span>
         </div>
       </div>
+
       <!-- Events -->
       <div class="vs-events">
         <!-- events -->
+        <slot
+          name="timeline-body"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :scale
+        />
         <Task
           v-for="(event, index) in events"
           :key="index"
@@ -285,6 +328,13 @@ export default defineComponent({
       emit("event-activate", timelineEvent);
     }
 
+    // scrollLeft and onScroll are used to sync the header with the timeline
+    // events when scrolling
+    const scrollLeft = ref(0)
+    function onScroll(e: globalThis.Event) {
+      scrollLeft.value = (e.currentTarget as HTMLElement).scrollLeft
+    }
+
     watchEffect((onCleanup) => {
       const zones = dropzones.value;
       if (!zones?.length) return;
@@ -358,6 +408,8 @@ export default defineComponent({
       eventDragged,
       eventActivated,
       dropzones,
+      scrollLeft,
+      onScroll,
     };
   },
 });
@@ -372,6 +424,7 @@ export default defineComponent({
 .vs-scheduler {
   display: grid;
   grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
   height: 100%;
   border-radius: 0.5rem;
   overflow: hidden;
@@ -381,6 +434,9 @@ export default defineComponent({
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 0.75rem;
   line-height: 1.5;
+  grid-template-areas:
+    "header-left header-right"
+    "left       right";
 }
 
 .vs-first-col {
@@ -394,6 +450,7 @@ export default defineComponent({
   margin-right: 1px;
   overflow: hidden;
   min-width: fit-content;
+  grid-area: left;
 }
 
 .vs-headers {
@@ -434,6 +491,8 @@ export default defineComponent({
   overflow: auto;
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
+  grid-area: right;
+  position: relative;
 }
 
 .vs-timeline {
@@ -494,4 +553,21 @@ export default defineComponent({
 .vs-timespan {
   position: absolute;
 }
+
+.vs-header-left {
+  grid-area: header-left;
+}
+
+.vs-header-right {
+  grid-area: header-right;
+  overflow: hidden;
+  position: relative;
+}
+
+.vs-header-right-content {
+  width: fit-content;
+  transform: translateX(var(--header-scroll-left, 0px));
+  will-change: transform;
+}
+
 </style>
