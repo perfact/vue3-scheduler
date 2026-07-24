@@ -8,6 +8,10 @@
     :options="options"
     :start="start"
     :spans="spans"
+    :style="{
+      '--available-worktime-color': availableWorktimeHoursColor,
+      '--required-worktime-color': requiredWorktimeHoursColor,
+    }"
     @event-activate="(event) => emit('event-activate', event)"
   >
     <!-- Header row above the identifiers -->
@@ -27,9 +31,29 @@
           'max-height': `${3 * row_height}px`,
         }"
       >
-        <slot name="staff-planning-label">
-          Personal-Planung
-        </slot>
+        <div class="vs-staff-label-content">
+          <slot name="staff-planning-label">
+            Personal-Planung
+          </slot>
+
+          <slot name="staff-legend">
+            <div class="vs-staff-legend">
+              <div class="vs-staff-legend-item">
+                <span class="vs-staff-legend-bar" />
+                <slot name="staff-legend-required-worktime-label">
+                  <span>Benötigte Arbeitsstunden</span>
+                </slot>
+              </div>
+
+              <div class="vs-staff-legend-item">
+                <span class="vs-staff-legend-line" />
+                <slot name="staff-legend-available-worktime-label">
+                  <span>Verfügbare Arbeitsstunden</span>
+                </slot>
+              </div>
+            </div>
+          </slot>
+        </div>
         <!-- Legend with hours -->
         <div class="vs-staff-axis">
           <div
@@ -203,18 +227,26 @@
               width: `${get_elem_width(block.start, block.end, cell_width, scale)}px`
             }"
           >
-            <div
-              class="vs-staff-planning-fill"
-              :style="{
-                height: `${(block.value / maxAxisValue) * 100}%`
-              }"
-            />
-
-            <span class="vs-staff-planning-label">
-              {{ block.value.toFixed(2) }}
-            </span>
+            <slot
+              name="required-worktime-block"
+              :block
+              :max-axis-value
+            >
+              <div
+                class="vs-staff-planning-fill"
+                :style="{
+                  height: `${(block.value / maxAxisValue) * 100}%`
+                }"
+              >
+                <span class="vs-staff-planning-label">
+                  {{ block.value.toFixed(2) }}
+                </span>
+              </div>            
+            </slot>
           </div>
+
           <!-- Available staff lines -->
+         
           <div
             v-for="block in availableStaffTimeline"
             :key="block.start.toISOString() + block.end.toISOString()"
@@ -225,9 +257,15 @@
               bottom: `${block.value / maxAxisValue * 100}%`
             }"
           >
-            <span class="vs-staff-planning-label">
-              Employee hours: {{ block.value }}
-            </span>
+            <slot
+              name="available-worktime-block"
+              :block
+              :max-axis-value
+            >
+              <span class="vs-staff-planning-label">
+                Employee hours: {{ block.value }}
+              </span>
+            </slot>
           </div>
         </div>
       </slot>
@@ -286,6 +324,16 @@ export default defineComponent({
           type: Array as PropType<Shift[]>,
           default: () => [],
         },
+        availableWorktimeHoursColor: {
+          type: String,
+          required: false,
+          default: '#16a34a',
+        },
+        requiredWorktimeHoursColor: {
+          type: String,
+          required: false,
+          default: '#3b82f6',
+        }
     },
     emits: ["event-activate"],
     setup(props, { emit }) {
@@ -426,8 +474,16 @@ export default defineComponent({
           return blocks;
         }
 
-        function getNiceStep(max: number, targetTicks: number = 6) {
-          const rawStep = max / targetTicks;
+        /**
+         * Get a nice step size for the hours on the y-axis.
+         * 
+         * @param max - Max hours that have to be displayed
+         * @param [numSteps=6] - Number of steps that should be shown. Defaults
+         *  to 6.
+         * @returns - Returns the step size
+         */
+        function getNiceStep(max: number, numSteps: number = 6) {
+          const rawStep = max / numSteps;
           // Greatest power of ten that is less or equal to rawstep
           // Example rawStep = 12:
           // log10(12) = 1.07... -> floor(1.07) = 1 -> 10¹ = 10
@@ -446,6 +502,9 @@ export default defineComponent({
           return 10 * magnitude;
         }
 
+        /**
+         * Get values for the staff axis (in hours)
+         */
         const staffAxis = computed(() => {
           const step = getNiceStep(max_labortime_in_timeslot.value);
           const max = Math.ceil(max_labortime_in_timeslot.value / step) * step;
@@ -461,6 +520,9 @@ export default defineComponent({
           return values.reverse();
         });
 
+        /**
+         * Get the max axis value (in hours)
+         */
         const maxAxisValue = computed(() => {
           return Math.max(
             ...staffAxis.value.map(
@@ -566,8 +628,9 @@ export default defineComponent({
 /* Staff planning */
 /* Label for staff row */
 .vs-staff-label-cell {
+  justify-content: space-between;
+  align-items: stretch;
   display: flex;
-  align-items: center;
   position: relative;
   padding: 0.625rem;
   background-color: #ffffff;
@@ -575,7 +638,43 @@ export default defineComponent({
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
   grid-column: span 2;
   border-top: solid 2px;
-  border-top-color: #000000
+  border-top-color: #000000;
+}
+
+.vs-staff-label-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  flex: 1;
+}
+
+/* Legend container */
+.vs-staff-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.vs-staff-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vs-staff-legend-bar {
+  width: 16px;
+  height: 10px;
+  background: var(--required-worktime-color);
+  opacity: .4;
+  border: 1px solid var(--required-worktime-color);
+}
+
+.vs-staff-legend-line {
+  width: 16px;
+  border-top: 2px solid var(--available-worktime-color);
 }
 
 /* Staff blocks */
@@ -584,7 +683,7 @@ export default defineComponent({
   width: 100%;
   overflow: hidden;
   border-top: solid 2px;
-  border-top-color: #000000
+  border-top-color: #000000;
 }
 
 .vs-staff-planning-block {
@@ -600,7 +699,7 @@ export default defineComponent({
   left: 0;
   right: 0;
   bottom: 0;
-  background: #3b82f6;
+  background: var(--required-worktime-color);
   opacity: .35;
   transition: height .2s;
 }
@@ -615,7 +714,7 @@ export default defineComponent({
   font-weight: 600;
 }
 
-/* Lines for staff grid */
+/* Timeslot lines for staff grid */
 .vs-staff-grid {
   position: absolute;
   inset: 0;
@@ -636,7 +735,7 @@ export default defineComponent({
   left: 0;
   right: 0;
   height: 2px;
-  background: #16a34a;
+  background:  var(--available-worktime-color);
   z-index: 5;
 }
 
@@ -656,6 +755,7 @@ export default defineComponent({
   color: #666;
 }
 
+/* Lines for hours of legend in timeline */
 .vs-staff-grid-horizontal {
   position: absolute;
   left: 0;
