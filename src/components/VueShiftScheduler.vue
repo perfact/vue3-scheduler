@@ -163,27 +163,41 @@
         :scale
         :timeline
       >
-        <div class="vs-staff-planning-timeslot-container">
+        <!-- Timeslot lines -->
+        <div class="vs-staff-grid">
           <div
-            v-for="(time_slot, timeIdx) in get_staff_timeline(timeline)"
-            :key="timeIdx"
-            class="vs-staff-planning-timeslot"
+            v-for="(_, index) in timeline"
+            :key="index"
+            class="vs-staff-grid-line"
             :style="{
-              'min-width': `${cell_width}px`,
-              'max-width': `${cell_width}px`,
-              'min-height': `${3 * row_height}px`,
-              'max-height': `${3 * row_height}px`,
+              left: `${index * cell_width}px`
+            }"
+          />
+        </div>
+        <div
+          class="vs-staff-planning-track"
+          :style="{
+            height: `${3 * row_height}px`
+          }"
+        >
+          <div
+            v-for="(block, index) in get_staff_timeline()"
+            :key="index"
+            class="vs-staff-planning-block"
+            :style="{
+              left: `${get_elem_left(start, block.start, cell_width, scale)}px`,
+              width: `${get_elem_width(block.start, block.end, cell_width, scale)}px`
             }"
           >
             <div
-              class="vs-staff-planning-bar"
+              class="vs-staff-planning-fill"
               :style="{
-                transform: `scaleY(${get_bar_height(time_slot) / 100})`,
+                height: `${(block.labortime / max_labortime_in_timeslot) * 100}%`
               }"
             />
 
-            <span class="vs-staff-planning-text">
-              {{ time_slot.labortime ?? 0 }}
+            <span class="vs-staff-planning-label">
+              {{ block.labortime.toFixed(2) }}
             </span>
           </div>
         </div>
@@ -210,42 +224,42 @@ export default defineComponent({
     components: { VueScheduler },
     props: {
         end: {
-            type: Date,
-            required: true,
+          type: Date,
+          required: true,
         },
         events: {
-            type: Array as PropType<ShiftEvent[]>,
-            required: true,
+          type: Array as PropType<ShiftEvent[]>,
+          required: true,
         },
         headers: {
-            type: Array,
-            required: true,
+          type: Array,
+          required: true,
         },
         identifiers: {
-            type: Array,
-            required: true,
+          type: Array,
+          required: true,
         },
         options: {
-            type: Object as PropType<Options>,
-            required: false,
-            default: DEFAULT_OPTIONS,
+          type: Object as PropType<Options>,
+          required: false,
+          default: DEFAULT_OPTIONS,
         },
         start: {
-            type: Date,
-            required: true,
+          type: Date,
+          required: true,
         },
         spans: {
-            type: Array<TimeSpan>,
-            required: false,
-            default: [],
+          type: Array<TimeSpan>,
+          required: false,
+          default: [],
         },
         shifts: {
-            type: Array as PropType<Shift[]>,
-            default: () => [],
+          type: Array as PropType<Shift[]>,
+          default: () => [],
         },
     },
     emits: ["event-activate"],
-    setup(_props, { emit }) {
+    setup(props, { emit }) {
         const slots = useSlots();
         const staff_timeline = ref([]);
 
@@ -262,7 +276,7 @@ export default defineComponent({
 
         function get_duration_of_event(event: ShiftEvent) {
           const diffTime = Math.abs(event.end.getTime() - event.start.getTime());
-          const diffHours = Math.floor(diffTime / (1000 * 60 * 60 ));
+          const diffHours = diffTime / (1000 * 60 * 60 );
           return diffHours
         }
 
@@ -273,51 +287,56 @@ export default defineComponent({
           return required_time_per_hour * scale;
         }
 
-        function get_staff_timeline(timeline: object[]) {
-          const timeline_copy = JSON.parse(JSON.stringify(timeline));
-          const scale = props.options.scale ?? 1;
-          const start = props.start.getTime();
+        function get_staff_timeline() {
+          const changePoints = new Set<number>();
+
           for (const event of props.events) {
-            // Get start index
-            const start_diff = Math.abs(event.start.getTime() - start);
-            const start_diff_hours = start_diff / (1000 * 60 * 60 );
-            const start_index = Math.floor(start_diff_hours / scale);
-            // Get end index
-            const end_diff = Math.abs(event.end.getTime() - start);
-            const end_diff_hours = end_diff / (1000 * 60 * 60 );
-            const end_index = Math.ceil(end_diff_hours / scale);
+            changePoints.add(event.start.getTime());
+            changePoints.add(event.end.getTime());
+          }
 
-            // Calculate labortime for time slot
-            for (let index = start_index; index < end_index; index++) {
-              const timeline_obj = timeline_copy[index];
-              const time_per_slot = calc_required_time_for_event_in_timeslot(
-                event
-              );
-              timeline_obj.labortime = time_per_slot + (timeline_obj.labortime ?? 0);
+          const sorted = [...changePoints].sort((a, b) => a - b);
+
+          const blocks = [];
+
+          for (let i = 0; i < sorted.length - 1; i++) {
+            const start = sorted[i];
+            const end = sorted[i + 1];
+
+            let labor = 0;
+
+            for (const event of props.events) {
+
+                if (
+                    event.start.getTime() <= start &&
+                    event.end.getTime() >= end
+                ) {
+                    labor += calc_required_time_for_event_in_timeslot(event);
+                }
             }
-          }
-          staff_timeline.value = timeline_copy;
-          return timeline_copy;
-        }
 
-        function get_bar_height(time_slot: object) {
-          if (!max_labortime_in_timeslot.value) {
-            return 0;
+            blocks.push({
+                start: new Date(start),
+                end: new Date(end),
+                labortime: labor
+            });
           }
 
-          return (time_slot.labortime ?? 0) / max_labortime_in_timeslot.value * 100;
-        }
+          staff_timeline.value = blocks;
+          return blocks;
+      }
 
-        return {
-            slots,
-            emit,
-            staff_timeline,
-            get_staff_timeline,
-            get_duration_of_event,
-            calc_required_time_for_event_in_timeslot,
-            max_labortime_in_timeslot,
-            get_bar_height,
-        };
+      
+
+      return {
+        slots,
+        emit,
+        staff_timeline,
+        get_staff_timeline,
+        get_duration_of_event,
+        calc_required_time_for_event_in_timeslot,
+        max_labortime_in_timeslot,
+      };
     }
 })
 </script>
@@ -405,6 +424,7 @@ export default defineComponent({
 }
 
 /* Staff planning */
+/* Label for staff row */
 .vs-staff-label-cell {
   display: flex;
   align-items: center;
@@ -416,28 +436,62 @@ export default defineComponent({
   grid-column: span 2;
 }
 
-.vs-staff-planning-timeslot-container {
-  display: flex;
-}
-
-.vs-staff-planning-timeslot {
+/* Staff blocks */
+.vs-staff-planning-track {
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  width: 100%;
   overflow: hidden;
-  border-right: 1px solid #e5e7eb;
 }
 
-.vs-staff-planning-bar {
+.vs-staff-planning-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+
+  border-right: 1px solid #e5e7eb;
+  border-left: 1px solid #e5e7eb;
+  box-sizing: border-box;
+
+  overflow: hidden;
+}
+
+.vs-staff-planning-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  background: #3b82f6;
+  opacity: .35;
+
+  transition: height .2s;
+}
+
+.vs-staff-planning-label {
   position: absolute;
   inset: 0;
-  background: #3b82f6;
-  transform-origin: bottom;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 1;
+  font-weight: 600;
 }
 
-.vs-staff-planning-text {
-  position: relative;
-  z-index: 1;
+/* Lines for staff grid */
+.vs-staff-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
+
+.vs-staff-grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #e5e7eb;
+}
+
 </style>
