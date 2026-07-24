@@ -1,14 +1,4 @@
 <template>
-  <div
-    v-for="event in events"
-    :key="event.identiferIdx"
-  >
-    Event: {{ event.meta?.title }}
-    -> Duration: {{ get_duration_of_event(event) }}
-    -> Labortime: {{ event.labortime }}
-    -> Hours per slot: {{ options.scale }}
-    -> Required Time per timeslot: {{ calc_required_time_for_event_in_timeslot(event) }}
-  </div>
   Max laborttime in timeslot: {{ max_labortime_in_timeslot }}
   <VueScheduler
     :end="end"
@@ -174,14 +164,16 @@
             }"
           />
         </div>
+        
         <div
           class="vs-staff-planning-track"
           :style="{
             height: `${3 * row_height}px`
           }"
         >
+          <!-- Required time -->
           <div
-            v-for="(block, index) in get_staff_timeline()"
+            v-for="(block, index) in requiredStaffTimeline"
             :key="index"
             class="vs-staff-planning-block"
             :style="{
@@ -192,12 +184,27 @@
             <div
               class="vs-staff-planning-fill"
               :style="{
-                height: `${(block.labortime / max_labortime_in_timeslot) * 100}%`
+                height: `${(block.value / max_labortime_in_timeslot) * 100}%`
               }"
             />
 
             <span class="vs-staff-planning-label">
-              {{ block.labortime.toFixed(2) }}
+              {{ block.value.toFixed(2) }}
+            </span>
+          </div>
+          <!-- Available staff -->
+          <div
+            v-for="block in availableStaffTimeline"
+            :key="block.start.toISOString() + block.end.toISOString()"
+            class="vs-available-staff-line"
+            :style="{
+              left: `${get_elem_left(start, block.start, cell_width, scale)}px`,
+              width: `${get_elem_width(block.start, block.end, cell_width, scale)}px`,
+              bottom: `${block.value / max_labortime_in_timeslot * 100}%`
+            }"
+          >
+            <span class="vs-staff-planning-label">
+              Employee hours: {{ block.value }}
             </span>
           </div>
         </div>
@@ -207,9 +214,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, useSlots, computed, ref } from "vue";
+import { defineComponent, PropType, useSlots, computed } from "vue";
 import { Options, TimeSpan } from "../types/VueScheduler";
-import { Shift, ShiftEvent } from "../types/VueShiftScheduler";
+import { Shift, ShiftEvent, TimeInterval, TimelineBlock } from "../types/VueShiftScheduler";
 import VueScheduler from "./VueScheduler.vue";
 
 const DEFAULT_OPTIONS: Options = {
@@ -261,82 +268,149 @@ export default defineComponent({
     emits: ["event-activate"],
     setup(props, { emit }) {
         const slots = useSlots();
-        const staff_timeline = ref([]);
+        const scale = props.options.scale ?? 1;
 
+        const requiredStaffTimeline = computed(() =>
+          buildTimeline(
+              props.events,
+              event => calc_required_time_for_event_per_timeslot(event)
+          )
+        );
 
+        const availableStaffTimeline = computed(() =>
+          buildTimeline(
+              props.shifts,
+              shift => shift.num_employees * scale
+          )
+        );
+
+        /**
+         * Compute the max laborttime / available time (employees).
+         */
         const max_labortime_in_timeslot = computed(() => {
           let max_time = 0;
-          for (const timeline_slot of staff_timeline.value) {
-            if (timeline_slot.labortime && timeline_slot.labortime > max_time) {
-              max_time = timeline_slot.labortime;
-            }
+          // Get max labortime
+          const max_required_time = Math.max(
+            ...requiredStaffTimeline.value.map(
+              (timeline_slot) => timeline_slot.value)
+          )
+          if (max_time < max_required_time) {
+            max_time = max_required_time;
           }
-          return max_time;
+          // Get max empoloyee time
+          const max_available_time = Math.max(
+            ...availableStaffTimeline.value.map(
+              (timeline_slot) => timeline_slot.value)
+          )
+          if (max_time < max_available_time) {
+            max_time = max_available_time;
+          }
+          return max_time + 0.5;
         });
 
+        /**
+         * Get the duration of an event in hours
+         * @param event - Shift event
+         * @returns - Returns the duration of a shift event in hours
+         */
         function get_duration_of_event(event: ShiftEvent) {
           const diffTime = Math.abs(event.end.getTime() - event.start.getTime());
           const diffHours = diffTime / (1000 * 60 * 60 );
           return diffHours
         }
 
-        function calc_required_time_for_event_in_timeslot(event: ShiftEvent) {
+        /**
+         * Calculate the required worktime for an event per timeslot.
+         * Calculation has the following logic:
+         * Lets say one timeslot is 1 hour. If the event has a duration of 2
+         * hours with 4h labortime, then the required worktime per slot would
+         * be 2 hours.
+         * 
+         * @param event - Shift event
+         * @returns - Returns the required worktime for a shift event
+         */
+        function calc_required_time_for_event_per_timeslot(event: ShiftEvent) {
           const event_duration = get_duration_of_event(event);
           const required_time_per_hour = event.labortime / event_duration;
           const scale = props.options.scale ?? 1;
           return required_time_per_hour * scale;
         }
 
-        function get_staff_timeline() {
-          const changePoints = new Set<number>();
+        /**
+         * Build timeline blocks for a list of time intervals.
+         * 
+         * @param timeIntervalItems - List of time intervals
+         * @param valueGetter - Function that returns the amount hours for
+         *  one time interval item. Used to calculate the value of a timeblock
+         * 
+         * @returns - Returns a list of TimelineBlocks for the given time
+         *  intervals
+         */
+        function buildTimeline<T extends TimeInterval>(
+          timeIntervalItems: T[],
+          valueGetter: (item: T) => number,
+        ): TimelineBlock[] {
 
-          for (const event of props.events) {
-            changePoints.add(event.start.getTime());
-            changePoints.add(event.end.getTime());
+          const timestamps = new Set<number>();
+
+          // Collect all start / stop times
+          for (const item of timeIntervalItems) {
+              timestamps.add(item.start.getTime());
+              timestamps.add(item.end.getTime());
           }
 
-          const sorted = [...changePoints].sort((a, b) => a - b);
+          // Sort the timestamps
+          const sortedTimestamps = [...timestamps].sort((a, b) => a - b);
 
-          const blocks = [];
+          const blocks: TimelineBlock[] = [];
 
-          for (let i = 0; i < sorted.length - 1; i++) {
-            const start = sorted[i];
-            const end = sorted[i + 1];
+          for (let i = 0; i < sortedTimestamps.length - 1; i++) {
+              const start = sortedTimestamps[i];
+              const end = sortedTimestamps[i + 1];
+              let value = 0;
+              // Sum the values of each time interval item that matches start
+              // end time of the current time block.
+              for (const item of timeIntervalItems) {
+                  if (item.start.getTime() <= start && item.end.getTime() >= end) {
+                    value += valueGetter(item);
+                  }
+              }
 
-            let labor = 0;
+              // If the time value is 0, just irgnore it
+              if (value === 0) {
+                  continue;
+              }
 
-            for (const event of props.events) {
-
-                if (
-                    event.start.getTime() <= start &&
-                    event.end.getTime() >= end
-                ) {
-                    labor += calc_required_time_for_event_in_timeslot(event);
-                }
-            }
-
-            blocks.push({
-                start: new Date(start),
-                end: new Date(end),
-                labortime: labor
-            });
+              // Check if we can merge with previous block
+              const previous = blocks[blocks.length - 1];
+              // We may merge with prev block if value is the same and end time
+              // of prev block is start time of the current block
+              const may_merge_with_prev_block = (
+                previous &&
+                previous.value === value &&
+                previous.end.getTime() === start
+              );
+              if (may_merge_with_prev_block) {
+                previous.end = new Date(end);
+              } else {
+                blocks.push({
+                  start: new Date(start),
+                  end: new Date(end),
+                  value
+                });
+              }
           }
 
-          staff_timeline.value = blocks;
           return blocks;
-      }
+        }
 
-      
-
-      return {
-        slots,
-        emit,
-        staff_timeline,
-        get_staff_timeline,
-        get_duration_of_event,
-        calc_required_time_for_event_in_timeslot,
-        max_labortime_in_timeslot,
-      };
+        return {
+          slots,
+          emit,
+          max_labortime_in_timeslot,
+          requiredStaffTimeline,
+          availableStaffTimeline,
+        };
     }
 })
 </script>
@@ -434,6 +508,8 @@ export default defineComponent({
   color: #9ca3af;
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
   grid-column: span 2;
+  border-top: solid 2px;
+  border-top-color: #000000
 }
 
 /* Staff blocks */
@@ -441,17 +517,15 @@ export default defineComponent({
   position: relative;
   width: 100%;
   overflow: hidden;
+  border-top: solid 2px;
+  border-top-color: #000000
 }
 
 .vs-staff-planning-block {
   position: absolute;
   top: 0;
   bottom: 0;
-
-  border-right: 1px solid #e5e7eb;
-  border-left: 1px solid #e5e7eb;
   box-sizing: border-box;
-
   overflow: hidden;
 }
 
@@ -460,38 +534,44 @@ export default defineComponent({
   left: 0;
   right: 0;
   bottom: 0;
-
   background: #3b82f6;
   opacity: .35;
-
   transition: height .2s;
 }
 
 .vs-staff-planning-label {
   position: absolute;
   inset: 0;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   z-index: 1;
   font-weight: 600;
 }
 
 /* Lines for staff grid */
 .vs-staff-grid {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .vs-staff-grid-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: #e5e7eb;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #e5e7eb;
+}
+
+/*  Lines for available staff */
+.vs-available-staff-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #16a34a;
+  z-index: 5;
 }
 
 </style>

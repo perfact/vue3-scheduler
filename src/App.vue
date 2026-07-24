@@ -189,6 +189,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 6, 0),
         end: new Date(2024, 1, 1, 14, 0),
         color: "#3b82f6",
+        num_employees: 2,
       },
       {
         id: 2,
@@ -196,6 +197,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 14, 0),
         end: new Date(2024, 1, 1, 22, 0),
         color: "#f59e0b",
+        num_employees: 2,
       },
       {
         id: 3,
@@ -203,6 +205,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 22, 0),
         end: new Date(2024, 1, 2, 6, 0),
         color: "#6366f1",
+        num_employees: 1,
       },
 
       // 2nd february
@@ -212,6 +215,7 @@ export default defineComponent({
         start: new Date(2024, 1, 2, 6, 0),
         end: new Date(2024, 1, 2, 14, 0),
         color: "#3b82f6",
+        num_employees: 4,
       },
       {
         id: 5,
@@ -219,6 +223,7 @@ export default defineComponent({
         start: new Date(2024, 1, 2, 14, 0),
         end: new Date(2024, 1, 2, 22, 0),
         color: "#f59e0b",
+        num_employees: 1,
       },
 
       // 3rd february
@@ -228,6 +233,7 @@ export default defineComponent({
         start: new Date(2024, 1, 3, 8, 0),
         end: new Date(2024, 1, 3, 18, 0),
         color: "#10b981",
+        num_employees: 2,
       },
 
       // 5th february
@@ -237,6 +243,7 @@ export default defineComponent({
         start: new Date(2024, 1, 5, 6, 0),
         end: new Date(2024, 1, 5, 14, 0),
         color: "#3b82f6",
+        num_employees: 2,
       },
       {
         id: 8,
@@ -244,6 +251,7 @@ export default defineComponent({
         start: new Date(2024, 1, 5, 14, 0),
         end: new Date(2024, 1, 5, 22, 0),
         color: "#f59e0b",
+        num_employees: 2,
       },
 
       // 10th february
@@ -253,6 +261,7 @@ export default defineComponent({
         start: new Date(2024, 1, 10, 10, 0),
         end: new Date(2024, 1, 10, 16, 0),
         color: "#ef4444",
+        num_employees: 1,
       },
 
       // 15th february
@@ -262,6 +271,7 @@ export default defineComponent({
         start: new Date(2024, 1, 15, 7, 0),
         end: new Date(2024, 1, 15, 19, 0),
         color: "#8b5cf6",
+        num_employees: 5,
       },
     ]);
 

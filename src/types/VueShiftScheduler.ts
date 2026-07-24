@@ -6,6 +6,7 @@ interface Shift {
     start: Date;
     end: Date;
     color: string;
+    num_employees: number;
 }
 
 /**
@@ -16,4 +17,15 @@ interface ShiftEvent extends Event {
     labortime: number;
 }
 
-export type { Shift, ShiftEvent };
+interface TimeInterval {
+    start: Date;
+    end: Date;
+}
+
+interface TimelineBlock {
+    start: Date;
+    end: Date;
+    value: number;
+}
+
+export type { Shift, ShiftEvent, TimeInterval, TimelineBlock };
