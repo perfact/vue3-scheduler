@@ -30,6 +30,19 @@
         <slot name="staff-planning-label">
           Personal-Planung
         </slot>
+        <!-- Legend with hours -->
+        <div class="vs-staff-axis">
+          <div
+            v-for="tick in staffAxis"
+            :key="tick.value"
+            class="vs-staff-axis-label"
+            :style="{
+              bottom: `${tick.percent}%`
+            }"
+          >
+            {{ tick.value }}
+          </div>
+        </div>
       </div>
     </template>
 
@@ -171,7 +184,16 @@
             height: `${3 * row_height}px`
           }"
         >
-          <!-- Required time -->
+          <!-- Lines for the hours on the y-axis -->
+          <div
+            v-for="tick in staffAxis"
+            :key="tick.value"
+            class="vs-staff-grid-horizontal"
+            :style="{
+              bottom: `${tick.percent}%`
+            }"
+          />
+          <!-- Required worktime blocks -->
           <div
             v-for="(block, index) in requiredStaffTimeline"
             :key="index"
@@ -184,7 +206,7 @@
             <div
               class="vs-staff-planning-fill"
               :style="{
-                height: `${(block.value / max_labortime_in_timeslot) * 100}%`
+                height: `${(block.value / maxAxisValue) * 100}%`
               }"
             />
 
@@ -192,7 +214,7 @@
               {{ block.value.toFixed(2) }}
             </span>
           </div>
-          <!-- Available staff -->
+          <!-- Available staff lines -->
           <div
             v-for="block in availableStaffTimeline"
             :key="block.start.toISOString() + block.end.toISOString()"
@@ -200,7 +222,7 @@
             :style="{
               left: `${get_elem_left(start, block.start, cell_width, scale)}px`,
               width: `${get_elem_width(block.start, block.end, cell_width, scale)}px`,
-              bottom: `${block.value / max_labortime_in_timeslot * 100}%`
+              bottom: `${block.value / maxAxisValue * 100}%`
             }"
           >
             <span class="vs-staff-planning-label">
@@ -404,12 +426,56 @@ export default defineComponent({
           return blocks;
         }
 
+        function getNiceStep(max: number, targetTicks: number = 6) {
+          const rawStep = max / targetTicks;
+          // Greatest power of ten that is less or equal to rawstep
+          // Example rawStep = 12:
+          // log10(12) = 1.07... -> floor(1.07) = 1 -> 10¹ = 10
+          const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+          // Normalize the rawStep so it will always be between 0 - 10
+          const normalized = rawStep / magnitude;
+
+          if (normalized <= 1)
+            return magnitude;
+
+          if (normalized <= 2)
+            return 2 * magnitude;
+
+          if (normalized <= 5)
+            return 5 * magnitude;
+          return 10 * magnitude;
+        }
+
+        const staffAxis = computed(() => {
+          const step = getNiceStep(max_labortime_in_timeslot.value);
+          const max = Math.ceil(max_labortime_in_timeslot.value / step) * step;
+          const values = [];
+
+          for (let v = 0; v <= max; v += step) {
+            values.push({
+              value: v,
+              percent: (v / max) * 100
+            });
+          }
+
+          return values.reverse();
+        });
+
+        const maxAxisValue = computed(() => {
+          return Math.max(
+            ...staffAxis.value.map(
+              (axis_value) => axis_value.value)
+          )
+        });
+
         return {
           slots,
           emit,
           max_labortime_in_timeslot,
           requiredStaffTimeline,
           availableStaffTimeline,
+          staffAxis,
+          maxAxisValue,
         };
     }
 })
@@ -574,4 +640,26 @@ export default defineComponent({
   z-index: 5;
 }
 
+
+/* Legend with hours */
+.vs-staff-axis {
+  position: relative;
+  width: 45px;
+  height: 100%;
+}
+
+.vs-staff-axis-label {
+  position: absolute;
+  right: 0px;
+  transform: translateY(50%);
+  font-size: 11px;
+  color: #666;
+}
+
+.vs-staff-grid-horizontal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #ddd;
+}
 </style>
