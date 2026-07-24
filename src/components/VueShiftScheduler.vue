@@ -173,7 +173,7 @@
             :key="index"
             class="vs-staff-grid-line"
             :style="{
-              left: `${index * cell_width}px`
+              left: `${(index as number) * cell_width}px`
             }"
           />
         </div>
@@ -327,7 +327,7 @@ export default defineComponent({
           if (max_time < max_available_time) {
             max_time = max_available_time;
           }
-          return max_time + 0.5;
+          return max_time + 0.1;
         });
 
         /**

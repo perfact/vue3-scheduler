@@ -271,7 +271,7 @@ export default defineComponent({
         start: new Date(2024, 1, 15, 7, 0),
         end: new Date(2024, 1, 15, 19, 0),
         color: "#8b5cf6",
-        num_employees: 5,
+        num_employees: 4,
       },
     ]);
 
