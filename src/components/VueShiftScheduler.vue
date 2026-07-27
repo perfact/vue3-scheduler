@@ -24,59 +24,61 @@
     </template>
     <!-- Addtional staff planning row below the identifieres -->
     <template #additional-rows="{row_height}">
-      <div
-        class="vs-staff-label-cell"
-        :style="{
-          'min-height': `${3 * row_height}px`,
-          'max-height': `${3 * row_height}px`,
-        }"
-      >
-        <div class="vs-staff-label-content">
-          <slot name="staff-planning-label">
-            Personal-Planung
-          </slot>
+      <slot name="staff-planning-identifier-column">
+        <div
+          class="vs-staff-label-cell"
+          :style="{
+            'min-height': `${3 * row_height}px`,
+            'max-height': `${3 * row_height}px`,
+          }"
+        >
+          <div class="vs-staff-label-content">
+            <slot name="staff-planning-label">
+              Personal-Planung
+            </slot>
 
-          <slot name="staff-legend">
-            <div class="vs-staff-legend">
-              <div class="vs-staff-legend-item">
-                <span class="vs-staff-legend-required-worktime" />
-                <slot name="staff-legend-required-worktime-label">
-                  <span>Benötigte Arbeitsstunden</span>
-                </slot>
-              </div>
+            <slot name="staff-legend">
+              <div class="vs-staff-legend">
+                <div class="vs-staff-legend-item">
+                  <span class="vs-staff-legend-required-worktime" />
+                  <slot name="staff-legend-required-worktime-label">
+                    <span>Benötigte Arbeitsstunden</span>
+                  </slot>
+                </div>
 
-              <div class="vs-staff-legend-item">
-                <span class="vs-staff-legend-required-exceeds-available" />
-                <slot name="staff-legend-required-exceeds-available-label">
-                  <span>
-                    Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden
-                  </span>
-                </slot>
-              </div>
+                <div class="vs-staff-legend-item">
+                  <span class="vs-staff-legend-available-worktime" />
+                  <slot name="staff-legend-available-worktime-label">
+                    <span>Verfügbare Arbeitsstunden</span>
+                  </slot>
+                </div>
 
-              <div class="vs-staff-legend-item">
-                <span class="vs-staff-legend-available-worktime" />
-                <slot name="staff-legend-available-worktime-label">
-                  <span>Verfügbare Arbeitsstunden</span>
-                </slot>
+                <div class="vs-staff-legend-item">
+                  <span class="vs-staff-legend-required-exceeds-available" />
+                  <slot name="staff-legend-required-exceeds-available-label">
+                    <span>
+                      Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden
+                    </span>
+                  </slot>
+                </div>
               </div>
+            </slot>
+          </div>
+          <!-- Legend with hours -->
+          <div class="vs-staff-axis">
+            <div
+              v-for="tick in staffAxis"
+              :key="tick.value"
+              class="vs-staff-axis-label"
+              :style="{
+                bottom: `${tick.percent}%`
+              }"
+            >
+              {{ tick.value }}
             </div>
-          </slot>
-        </div>
-        <!-- Legend with hours -->
-        <div class="vs-staff-axis">
-          <div
-            v-for="tick in staffAxis"
-            :key="tick.value"
-            class="vs-staff-axis-label"
-            :style="{
-              bottom: `${tick.percent}%`
-            }"
-          >
-            {{ tick.value }}
           </div>
         </div>
-      </div>
+      </slot>
     </template>
 
     <!-- Actual shifts above the timeline -->
@@ -355,7 +357,7 @@ export default defineComponent({
     emits: ["event-activate"],
     setup(props, { emit }) {
         const slots = useSlots();
-        const scale = props.options.scale ?? 1;
+        const scale = computed(() => props.options.scale ?? 1);
 
         const staffTimeline = computed(buildStaffTimeline);
 
@@ -393,6 +395,9 @@ export default defineComponent({
          * @returns - Returns the required worktime for a shift event
          */
         function calc_required_time_for_event_per_timeslot(event: ProductionEvent) {
+          if (!event.labortime) {
+            return 0;
+          }
           const event_duration = get_duration_of_event(event);
           const required_time_per_hour = event.labortime / event_duration;
           const scale = props.options.scale ?? 1;
@@ -445,7 +450,7 @@ export default defineComponent({
                 shift.start.getTime() <= start &&
                 shift.end.getTime() >= end
               ) {
-                available += shift.num_employees * scale;
+                available += shift.num_employees * scale.value;
               }
             }
 
