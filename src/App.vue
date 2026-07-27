@@ -107,7 +107,7 @@
 import { defineComponent, ref } from "vue";
 import VueScheduler from "./components/VueScheduler.vue";
 import { Options, TimeSpan } from "./types/VueScheduler";
-import { Shift, ShiftEvent } from "./types/VueShiftScheduler";
+import { Shift, ProductionEvent  } from "./types/VueShiftScheduler";
 import VueShiftScheduler from "./components/VueShiftScheduler.vue";
 
 export default defineComponent({
@@ -142,7 +142,7 @@ export default defineComponent({
 
     const show_shifts = ref(false);
 
-    const data = ref<ShiftEvent[]>([
+    const data = ref<ProductionEvent[]>([
       {
         identiferIdx: 0,
         start: new Date(2024, 1, 1, 6, 0),

@@ -49,7 +49,9 @@
               <div class="vs-staff-legend-item">
                 <span class="vs-staff-legend-required-exceeds-available" />
                 <slot name="staff-legend-required-exceeds-available-label">
-                  <span>Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden</span>
+                  <span class="vs-staff-legend-required-exceeds-available-label">
+                    Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden
+                  </span>
                 </slot>
               </div>
 

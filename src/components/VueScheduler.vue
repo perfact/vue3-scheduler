@@ -440,7 +440,7 @@ export default defineComponent({
 
 .vs-scheduler {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(10%, 20%) minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   height: 100%;
   border-radius: 0.5rem;
