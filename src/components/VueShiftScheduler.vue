@@ -11,6 +11,7 @@
     :style="{
       '--available-worktime-color': availableWorktimeHoursColor,
       '--required-worktime-color': requiredWorktimeHoursColor,
+      '--required-exceeds-available-color': requiredExceedsAvailableColor,
     }"
     @event-activate="(event) => emit('event-activate', event)"
   >
@@ -39,14 +40,21 @@
           <slot name="staff-legend">
             <div class="vs-staff-legend">
               <div class="vs-staff-legend-item">
-                <span class="vs-staff-legend-bar" />
+                <span class="vs-staff-legend-required-worktime" />
                 <slot name="staff-legend-required-worktime-label">
                   <span>Benötigte Arbeitsstunden</span>
                 </slot>
               </div>
 
               <div class="vs-staff-legend-item">
-                <span class="vs-staff-legend-line" />
+                <span class="vs-staff-legend-required-exceeds-available" />
+                <slot name="staff-legend-required-exceeds-available-label">
+                  <span>Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden</span>
+                </slot>
+              </div>
+
+              <div class="vs-staff-legend-item">
+                <span class="vs-staff-legend-available-worktime" />
                 <slot name="staff-legend-available-worktime-label">
                   <span>Verfügbare Arbeitsstunden</span>
                 </slot>
@@ -219,7 +227,7 @@
           />
           <!-- Required worktime blocks -->
           <div
-            v-for="(block, index) in requiredStaffTimeline"
+            v-for="(block, index) in staffTimeline"
             :key="index"
             class="vs-staff-planning-block"
             :style="{
@@ -234,12 +242,19 @@
             >
               <div
                 class="vs-staff-planning-fill"
+                :class="{
+                  'vs-staff-planning-fill-overload':
+                    block.required > block.available
+                }"
                 :style="{
-                  height: `${(block.value / maxAxisValue) * 100}%`
+                  height: `${(block.required / maxAxisValue) * 100}%`
                 }"
               >
-                <span class="vs-staff-planning-label">
-                  {{ block.value.toFixed(2) }}
+                <span
+                  v-if="block.required > 0"
+                  class="vs-staff-planning-label"
+                >
+                  {{ block.required.toFixed(2) }} h
                 </span>
               </div>            
             </slot>
@@ -248,24 +263,20 @@
           <!-- Available staff lines -->
          
           <div
-            v-for="block in availableStaffTimeline"
+            v-for="block in staffTimeline"
             :key="block.start.toISOString() + block.end.toISOString()"
             class="vs-available-staff-line"
             :style="{
               left: `${get_elem_left(start, block.start, cell_width, scale)}px`,
               width: `${get_elem_width(block.start, block.end, cell_width, scale)}px`,
-              bottom: `${block.value / maxAxisValue * 100}%`
+              bottom: `${block.available / maxAxisValue * 100}%`
             }"
           >
             <slot
               name="available-worktime-block"
               :block
               :max-axis-value
-            >
-              <span class="vs-staff-planning-label">
-                Employee hours: {{ block.value }}
-              </span>
-            </slot>
+            />
           </div>
         </div>
       </slot>
@@ -276,7 +287,7 @@
 <script lang="ts">
 import { defineComponent, PropType, useSlots, computed } from "vue";
 import { Options, TimeSpan } from "../types/VueScheduler";
-import { Shift, ShiftEvent, TimeInterval, TimelineBlock } from "../types/VueShiftScheduler";
+import { Shift, ProductionEvent, StaffTimelineBlock } from "../types/VueShiftScheduler";
 import VueScheduler from "./VueScheduler.vue";
 
 const DEFAULT_OPTIONS: Options = {
@@ -295,7 +306,7 @@ export default defineComponent({
           required: true,
         },
         events: {
-          type: Array as PropType<ShiftEvent[]>,
+          type: Array as PropType<ProductionEvent[]>,
           required: true,
         },
         headers: {
@@ -333,6 +344,11 @@ export default defineComponent({
           type: String,
           required: false,
           default: '#3b82f6',
+        },
+        requiredExceedsAvailableColor: {
+          type: String,
+          required: false,
+          default: '#ef4444',
         }
     },
     emits: ["event-activate"],
@@ -340,50 +356,26 @@ export default defineComponent({
         const slots = useSlots();
         const scale = props.options.scale ?? 1;
 
-        const requiredStaffTimeline = computed(() =>
-          buildTimeline(
-              props.events,
-              event => calc_required_time_for_event_per_timeslot(event)
-          )
-        );
-
-        const availableStaffTimeline = computed(() =>
-          buildTimeline(
-              props.shifts,
-              shift => shift.num_employees * scale
-          )
-        );
+        const staffTimeline = computed(buildStaffTimeline);
 
         /**
          * Compute the max laborttime / available time (employees).
          */
-        const max_labortime_in_timeslot = computed(() => {
-          let max_time = 0;
-          // Get max labortime
-          const max_required_time = Math.max(
-            ...requiredStaffTimeline.value.map(
-              (timeline_slot) => timeline_slot.value)
-          )
-          if (max_time < max_required_time) {
-            max_time = max_required_time;
-          }
-          // Get max empoloyee time
-          const max_available_time = Math.max(
-            ...availableStaffTimeline.value.map(
-              (timeline_slot) => timeline_slot.value)
-          )
-          if (max_time < max_available_time) {
-            max_time = max_available_time;
-          }
-          return max_time + 0.1;
-        });
+        const max_labortime_in_timeslot = computed(() =>
+          Math.max(
+            ...staffTimeline.value.flatMap(block => [
+              block.required,
+              block.available
+            ])
+          ) + 0.1
+        );
 
         /**
          * Get the duration of an event in hours
          * @param event - Shift event
          * @returns - Returns the duration of a shift event in hours
          */
-        function get_duration_of_event(event: ShiftEvent) {
+        function get_duration_of_event(event: ProductionEvent) {
           const diffTime = Math.abs(event.end.getTime() - event.start.getTime());
           const diffHours = diffTime / (1000 * 60 * 60 );
           return diffHours
@@ -399,7 +391,7 @@ export default defineComponent({
          * @param event - Shift event
          * @returns - Returns the required worktime for a shift event
          */
-        function calc_required_time_for_event_per_timeslot(event: ShiftEvent) {
+        function calc_required_time_for_event_per_timeslot(event: ProductionEvent) {
           const event_duration = get_duration_of_event(event);
           const required_time_per_hour = event.labortime / event_duration;
           const scale = props.options.scale ?? 1;
@@ -409,66 +401,62 @@ export default defineComponent({
         /**
          * Build timeline blocks for a list of time intervals.
          * 
-         * @param timeIntervalItems - List of time intervals
-         * @param valueGetter - Function that returns the amount hours for
-         *  one time interval item. Used to calculate the value of a timeblock
-         * 
-         * @returns - Returns a list of TimelineBlocks for the given time
-         *  intervals
+         * @returns - Returns a list of StaffTimelineBlock for the given time
+         *  intervals. Each staff timeline block has a required and an
+         *  available value.
          */
-        function buildTimeline<T extends TimeInterval>(
-          timeIntervalItems: T[],
-          valueGetter: (item: T) => number,
-        ): TimelineBlock[] {
-
+        function buildStaffTimeline(): StaffTimelineBlock[] {
           const timestamps = new Set<number>();
 
-          // Collect all start / stop times
-          for (const item of timeIntervalItems) {
-              timestamps.add(item.start.getTime());
-              timestamps.add(item.end.getTime());
+          // Get timestamps for events
+          for (const event of props.events) {
+            timestamps.add(event.start.getTime());
+            timestamps.add(event.end.getTime());
           }
 
+          // Get timestamps for shifts
+          for (const shift of props.shifts) {
+            timestamps.add(shift.start.getTime());
+            timestamps.add(shift.end.getTime());
+          }
           // Sort the timestamps
           const sortedTimestamps = [...timestamps].sort((a, b) => a - b);
-
-          const blocks: TimelineBlock[] = [];
+          const blocks: StaffTimelineBlock[] = [];
 
           for (let i = 0; i < sortedTimestamps.length - 1; i++) {
-              const start = sortedTimestamps[i];
-              const end = sortedTimestamps[i + 1];
-              let value = 0;
-              // Sum the values of each time interval item that matches start
-              // end time of the current time block.
-              for (const item of timeIntervalItems) {
-                  if (item.start.getTime() <= start && item.end.getTime() >= end) {
-                    value += valueGetter(item);
-                  }
+            const start = sortedTimestamps[i];
+            const end = sortedTimestamps[i + 1];
+            let required = 0;
+            let available = 0;
+            // Get required time for all events in the current time interval
+            for (const event of props.events) {
+              if (
+                event.start.getTime() <= start &&
+                event.end.getTime() >= end
+              ) {
+                required += calc_required_time_for_event_per_timeslot(event);
               }
+            }
+            // Get available time through all shifts in the current time
+            // interval
+            for (const shift of props.shifts) {
+              if (
+                shift.start.getTime() <= start &&
+                shift.end.getTime() >= end
+              ) {
+                available += shift.num_employees * scale;
+              }
+            }
 
-              // If the time value is 0, just irgnore it
-              if (value === 0) {
-                  continue;
-              }
+            if (required === 0 && available === 0)
+              continue;
 
-              // Check if we can merge with previous block
-              const previous = blocks[blocks.length - 1];
-              // We may merge with prev block if value is the same and end time
-              // of prev block is start time of the current block
-              const may_merge_with_prev_block = (
-                previous &&
-                previous.value === value &&
-                previous.end.getTime() === start
-              );
-              if (may_merge_with_prev_block) {
-                previous.end = new Date(end);
-              } else {
-                blocks.push({
-                  start: new Date(start),
-                  end: new Date(end),
-                  value
-                });
-              }
+            blocks.push({
+              start: new Date(start),
+              end: new Date(end),
+              required,
+              available
+            });
           }
 
           return blocks;
@@ -478,8 +466,9 @@ export default defineComponent({
          * Get a nice step size for the hours on the y-axis.
          * 
          * @param max - Max hours that have to be displayed
-         * @param [numSteps=6] - Number of steps that should be shown. Defaults
-         *  to 6.
+         * @param [numSteps=6] - Target number of steps that should be shown.
+         *  The actual number of steps that will be displayed may deviate.
+         *  Defaults to 6.
          * @returns - Returns the step size
          */
         function getNiceStep(max: number, numSteps: number = 6) {
@@ -502,11 +491,12 @@ export default defineComponent({
           return 10 * magnitude;
         }
 
+        const stepSize = computed(() => getNiceStep(max_labortime_in_timeslot.value));
         /**
          * Get values for the staff axis (in hours)
          */
         const staffAxis = computed(() => {
-          const step = getNiceStep(max_labortime_in_timeslot.value);
+          const step = stepSize.value;
           const max = Math.ceil(max_labortime_in_timeslot.value / step) * step;
           const values = [];
 
@@ -534,9 +524,9 @@ export default defineComponent({
           slots,
           emit,
           max_labortime_in_timeslot,
-          requiredStaffTimeline,
-          availableStaffTimeline,
+          staffTimeline,
           staffAxis,
+          stepSize,
           maxAxisValue,
         };
     }
@@ -664,7 +654,7 @@ export default defineComponent({
   gap: 8px;
 }
 
-.vs-staff-legend-bar {
+.vs-staff-legend-required-worktime {
   width: 16px;
   height: 10px;
   background: var(--required-worktime-color);
@@ -672,7 +662,15 @@ export default defineComponent({
   border: 1px solid var(--required-worktime-color);
 }
 
-.vs-staff-legend-line {
+.vs-staff-legend-required-exceeds-available {
+  width: 16px;
+  height: 10px;
+  background: var(--required-exceeds-available-color);
+  opacity: .4;
+  border: 1px solid var(--required-exceeds-available-color);
+}
+
+.vs-staff-legend-available-worktime {
   width: 16px;
   border-top: 2px solid var(--available-worktime-color);
 }
@@ -712,6 +710,11 @@ export default defineComponent({
   align-items: center;
   z-index: 1;
   font-weight: 600;
+}
+
+.vs-staff-planning-fill-overload {
+  background: var(--required-exceeds-available-color);
+  opacity: .5;
 }
 
 /* Timeslot lines for staff grid */

@@ -1,6 +1,17 @@
 /**
- * @prop start - Start time of the event
- * @prop end - End time of the event
+ * Event interface. Used to display events on the timeline that can be dragged
+ * and resized.
+ *
+ * @interface Event
+ * @typedef {Event}
+ * 
+ * @prop {number} identiferIdx - Index of the event
+ * @prop {Date} start - Start time of the event
+ * @prop {Date} end - End time of the event
+ * @prop {Object} [meta] - Meta information of the event
+ * @prop {string} [meta.class] - Class of the event
+ * @prop {string} [meta.description] - Description of the event
+ * @prop {string} [meta.title] - Title of the event
  */
 interface Event {
   identiferIdx: number;
