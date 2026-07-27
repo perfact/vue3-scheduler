@@ -1,5 +1,4 @@
 <template>
-  Max laborttime in timeslot: {{ max_labortime_in_timeslot }}
   <VueScheduler
     :end="end"
     :events="events"
