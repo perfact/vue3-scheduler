@@ -48,7 +48,7 @@
               <div class="vs-staff-legend-item">
                 <span class="vs-staff-legend-required-exceeds-available" />
                 <slot name="staff-legend-required-exceeds-available-label">
-                  <span class="vs-staff-legend-required-exceeds-available-label">
+                  <span>
                     Benötigte Arbeitsstunden übersteigen verfügbare Arbeitsstunden
                   </span>
                 </slot>
@@ -644,7 +644,7 @@ export default defineComponent({
 .vs-staff-legend {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
   font-size: 12px;
   color: #666;
 }
