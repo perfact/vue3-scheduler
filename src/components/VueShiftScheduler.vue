@@ -264,7 +264,6 @@
           </div>
 
           <!-- Available staff lines -->
-         
           <div
             v-for="block in staffTimeline"
             :key="block.start.toISOString() + block.end.toISOString()"

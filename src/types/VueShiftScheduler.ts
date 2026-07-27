@@ -1,6 +1,5 @@
 import { Event } from "./VueScheduler";
 
-
 /**
  * Shift interface. Used to display shifts in the shift scheduler.
  *
@@ -37,11 +36,11 @@ interface Shift {
  * @prop {string} [meta.class] - Class of the event
  * @prop {string} [meta.description] - Description of the event
  * @prop {string} [meta.title] - Title of the event
+ * @prop {number} labortime - Labor time of the production event
  */
 interface ProductionEvent extends Event {
     labortime: number;
 }
-
 
 /**
  * Block for the staff planning timeline. Holds start/end timestamp and the
