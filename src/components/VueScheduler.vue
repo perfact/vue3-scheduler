@@ -49,7 +49,9 @@
             'max-height': `${rowHeight}px`,
           }"
         >
-          {{ header }}
+          <slot :name="`header-${header}`">
+            {{ header }}
+          </slot>
         </div>
       </div>
       <!-- Identifiers -->
@@ -61,14 +63,21 @@
         >
           <div
             v-for="(col, col_index) in identifier"
-            :key="col_index"
+            :key="isIdentifierObject(col) ? col.id : col_index"
             class="vs-identifier-cell"
             :style="{
               'min-height': `${rowHeight}px`,
               'max-height': `${rowHeight}px`,
             }"
           >
-            {{ col }}
+            <template v-if="isIdentifierObject(col)">
+              <slot :name="`identifier-${col.header_name}-${col.id}`">
+                {{ col.name }}
+              </slot>
+            </template>
+            <template v-else>
+              {{ col }}
+            </template>
           </div>
         </div>
       </div>
@@ -205,7 +214,7 @@ import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
 import Task from "./Task.vue";
-import { Options, Event, TimeSpan } from "../types/VueScheduler";
+import { Options, Event, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
 const DEFAULT_OPTIONS: Options = {
@@ -232,7 +241,7 @@ export default defineComponent({
       required: true,
     },
     identifiers: {
-      type: Array,
+      type: Array as PropType<(string | IdentifierObject)[][]>,
       required: true,
     },
     options: {
@@ -366,6 +375,12 @@ export default defineComponent({
       scrollLeft.value = (e.currentTarget as HTMLElement).scrollLeft
     }
 
+    function isIdentifierObject(
+      value: string | IdentifierObject
+    ): value is IdentifierObject {
+      return typeof value === 'object' && value !== null;
+    }
+
     watchEffect((onCleanup) => {
       const zones = dropzones.value;
       if (!zones?.length) return;
@@ -442,6 +457,7 @@ export default defineComponent({
       scrollLeft,
       onScroll,
       identifier_column_width,
+      isIdentifierObject,
     };
   },
 });

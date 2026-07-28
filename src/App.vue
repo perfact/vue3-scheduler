@@ -133,7 +133,6 @@ export default defineComponent({
   },
   setup() {
     const timelineHeaders = ref(["Route", "Start time"]);
-
     const timelineItems = [
       ["BMON-A", "08:00am"],
       ["BMON-B", "08:00am"],

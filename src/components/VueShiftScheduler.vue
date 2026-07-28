@@ -289,7 +289,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType, useSlots, computed } from "vue";
-import { Options, TimeSpan } from "../types/VueScheduler";
+import { Options, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { Shift, ProductionEvent, StaffTimelineBlock } from "../types/VueShiftScheduler";
 import VueScheduler from "./VueScheduler.vue";
 
@@ -317,7 +317,7 @@ export default defineComponent({
           required: true,
         },
         identifiers: {
-          type: Array,
+          type: Array as PropType<(string | IdentifierObject)[][]>,
           required: true,
         },
         options: {
