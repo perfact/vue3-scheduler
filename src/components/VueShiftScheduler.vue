@@ -357,7 +357,7 @@ export default defineComponent({
     emits: ["event-activate"],
     setup(props, { emit }) {
         const slots = useSlots();
-        const scale = computed(() => props.options.scale ?? 1);
+        const scale = computed(() => props.options.scale ?? 0.5);
 
         const staffTimeline = computed(buildStaffTimeline);
 
@@ -379,7 +379,7 @@ export default defineComponent({
          * @returns - Returns the duration of a shift event in hours
          */
         function get_duration_of_event(event: ProductionEvent) {
-          const diffTime = Math.abs(event.end.getTime() - event.start.getTime());
+          const diffTime = event.end.getTime() - event.start.getTime();
           const diffHours = diffTime / (1000 * 60 * 60 );
           return diffHours
         }
@@ -400,8 +400,7 @@ export default defineComponent({
           }
           const event_duration = get_duration_of_event(event);
           const required_time_per_hour = event.labortime / event_duration;
-          const scale = props.options.scale ?? 1;
-          return required_time_per_hour * scale;
+          return required_time_per_hour * scale.value;
         }
 
         /**
