@@ -177,9 +177,13 @@ export default defineComponent({
   background-color: #3b82f6;
 }
 
+/* Fill the whole block so slot content (background, tooltip activator, hover
+   area) covers the entire event, not just the text. The label inside the slot
+   can opt into `position: sticky` to stay visible when a wide block is
+   scrolled horizontally. */
 .event-content {
-  position: sticky;
-  left: calc(-1 * var(--translate-x));
+  width: 100%;
+  height: 100%;
 }
 
 .draggable {

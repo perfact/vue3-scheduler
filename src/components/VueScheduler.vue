@@ -53,8 +53,8 @@
           class="vs-identifier-row"
         >
           <div
-            v-for="col in identifier"
-            :key="col"
+            v-for="(col, col_index) in identifier"
+            :key="col_index"
             class="vs-identifier-cell"
             :style="{
               'min-height': `${rowHeight}px`,
