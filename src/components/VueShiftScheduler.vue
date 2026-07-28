@@ -11,6 +11,7 @@
       '--available-worktime-color': availableWorktimeHoursColor,
       '--required-worktime-color': requiredWorktimeHoursColor,
       '--required-exceeds-available-color': requiredExceedsAvailableColor,
+      '--num-headers': headers.length,
     }"
     @event-activate="(event) => emit('event-activate', event)"
   >
@@ -631,7 +632,7 @@ export default defineComponent({
   background-color: #ffffff;
   color: #9ca3af;
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
-  grid-column: span 2;
+  grid-column: span var(--num-headers);
   border-top: solid 2px;
   border-top-color: #000000;
 }
