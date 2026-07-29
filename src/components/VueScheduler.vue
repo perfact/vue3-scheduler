@@ -1,5 +1,10 @@
 <template>
-  <div class="vs-scheduler">
+  <div
+    class="vs-scheduler"
+    :style="{
+      '--identifier-column-width': identifier_column_width,
+    }"
+  >
     <div class="vs-header-left">
       <slot
         name="header-column-identifier"
@@ -29,7 +34,9 @@
     <!-- Headers + Identifers (first column) -->
     <div
       class="vs-first-col"
-      :style="{ gridTemplateColumns: `repeat(${headers.length}, auto)` }"
+      :style="{
+        gridTemplateColumns: `repeat(${headers.length}, var(--identifier-column-width))`,
+      }"
     >
       <!-- Headers -->
       <div class="vs-headers">
@@ -65,6 +72,11 @@
           </div>
         </div>
       </div>
+
+      <slot
+        name="additional-rows"
+        :row_height="rowHeight"
+      />
     </div>
     <!-- Timeline + Events (second column) -->
     <div
@@ -164,6 +176,18 @@
             }"
           />
         </div>
+
+        <slot
+          name="timeline-body-end"
+          :get_elem_left="getElemLeft"
+          :get_elem_width="getElemWidth"
+          :start
+          :cell_width="cellWidth"
+          :row_height="rowHeight"
+          :scale
+          :timeline="getTimeline"
+        />
+
         <!-- Row separators rendered above timespans (z-index: 2) but below events (z-index: 10) -->
         <div
           v-for="(_, index) in identifiers"
@@ -236,6 +260,13 @@ export default defineComponent({
     );
     const scale = computed(() => props.options?.scale || 0.5);
     const resolution = computed(() => props.options?.resizeResolution || 15.0);
+    const identifier_column_width = computed(() => {
+        if (!props.options?.identifier_column_width)  {
+          return 'auto';
+        }
+        return `${props.options?.identifier_column_width}px`;
+      }
+    );
     const dropzones = ref<Array<Target>>();
 
     function generateTimeline() {
@@ -320,7 +351,7 @@ export default defineComponent({
         timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newIx),
-        props.identifiers.length,
+        props.identifiers.length - 1,
       );
     }
 
@@ -410,6 +441,7 @@ export default defineComponent({
       dropzones,
       scrollLeft,
       onScroll,
+      identifier_column_width,
     };
   },
 });
@@ -423,7 +455,7 @@ export default defineComponent({
 
 .vs-scheduler {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   height: 100%;
   border-radius: 0.5rem;

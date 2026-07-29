@@ -27,6 +27,19 @@
           step="1"
         >
         <label
+          for="identifier_column_width"
+          class="demo-label"
+        >Identifier column width</label>
+        <input
+          id="identifier_column_width"
+          v-model="options.identifier_column_width"
+          class="demo-input"
+          type="number"
+          name="scale"
+          min="0"
+          step="1"
+        >
+        <label
           for="show_shifts"
           class="demo-label"
         >Show Shifts</label>
@@ -38,38 +51,9 @@
         >
       </div>
     </div>
-    <VueScheduler
-      v-if="!show_shifts"
-      :end="end"
-      :events="data"
-      :headers="timelineHeaders"
-      :identifiers="timelineItems"
-      :options="options"
-      :start="start"
-      :spans="timespans"
-      @event-activate="handle_event_activate"
-    >
-      <template #event="{ event }">
-        <div class="event-body">
-          <div class="event-label">
-            <div class="event-title">
-              {{ event.meta?.title }}
-            </div>
-            <div class="event-desc">
-              {{ event.meta?.description }}
-            </div>
-            <div class="event-time">
-              {{ event.start.toLocaleString() }}
-            </div>
-            <div class="event-time">
-              {{ event.end.toLocaleString() }}
-            </div>
-          </div>
-        </div>
-      </template>
-    </VueScheduler>
-    <template v-else>
-      <VueShiftScheduler
+    <div class="scheduler-demo">
+      <VueScheduler
+        v-if="!show_shifts"
         :end="end"
         :events="data"
         :headers="timelineHeaders"
@@ -77,7 +61,6 @@
         :options="options"
         :start="start"
         :spans="timespans"
-        :shifts="shifts"
         @event-activate="handle_event_activate"
       >
         <template #event="{ event }">
@@ -98,15 +81,48 @@
             </div>
           </div>
         </template>
-      </VueShiftScheduler>
-    </template>
+      </VueScheduler>
+      <template v-else>
+        <VueShiftScheduler
+          :end="end"
+          :events="data"
+          :headers="timelineHeaders"
+          :identifiers="timelineItems"
+          :options="options"
+          :start="start"
+          :spans="timespans"
+          :shifts="shifts"
+          @event-activate="handle_event_activate"
+        >
+          <template #event="{ event }">
+            <div class="event-body">
+              <div class="event-label">
+                <div class="event-title">
+                  {{ event.meta?.title }}
+                </div>
+                <div class="event-desc">
+                  {{ event.meta?.description }}
+                </div>
+                <div class="event-time">
+                  {{ event.start.toLocaleString() }}
+                </div>
+                <div class="event-time">
+                  {{ event.end.toLocaleString() }}
+                </div>
+              </div>
+            </div>
+          </template>
+        </VueShiftScheduler>
+      </template>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import VueScheduler from "./components/VueScheduler.vue";
-import { Event, Options, TimeSpan, Shift } from "./types/VueScheduler";
+import { Options, TimeSpan } from "./types/VueScheduler";
+import { Shift, ProductionEvent  } from "./types/VueShiftScheduler";
 import VueShiftScheduler from "./components/VueShiftScheduler.vue";
 
 export default defineComponent({
@@ -136,12 +152,13 @@ export default defineComponent({
       rowHeight: 81,
       scale: 8,
       timeFormat: "HH:mm",
-      dateFormat: "yyyy-MM-dd",  
+      dateFormat: "yyyy-MM-dd",
+      identifier_column_width: undefined,
     });
 
     const show_shifts = ref(false);
 
-    const data = ref<Event[]>([
+    const data = ref<ProductionEvent[]>([
       {
         identiferIdx: 0,
         start: new Date(2024, 1, 1, 6, 0),
@@ -151,16 +168,18 @@ export default defineComponent({
           description: "Event 1 description",
           class: "event-emerald",
         },
+        labortime: 8
       },
       {
         identiferIdx: 1,
-        start: new Date(2024, 1, 1, 3, 0),
-        end: new Date(2024, 1, 1, 5, 0),
+        start: new Date(2024, 1, 1, 10, 0),
+        end: new Date(2024, 1, 1, 18, 0),
         meta: {
           title: "Event 2",
           description: "Event 2 description",
           class: "event-orange",
         },
+        labortime: 16
       },
     ]);
 
@@ -186,6 +205,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 6, 0),
         end: new Date(2024, 1, 1, 14, 0),
         color: "#3b82f6",
+        num_employees: 2,
       },
       {
         id: 2,
@@ -193,6 +213,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 14, 0),
         end: new Date(2024, 1, 1, 22, 0),
         color: "#f59e0b",
+        num_employees: 2,
       },
       {
         id: 3,
@@ -200,6 +221,7 @@ export default defineComponent({
         start: new Date(2024, 1, 1, 22, 0),
         end: new Date(2024, 1, 2, 6, 0),
         color: "#6366f1",
+        num_employees: 1,
       },
 
       // 2nd february
@@ -209,6 +231,7 @@ export default defineComponent({
         start: new Date(2024, 1, 2, 6, 0),
         end: new Date(2024, 1, 2, 14, 0),
         color: "#3b82f6",
+        num_employees: 4,
       },
       {
         id: 5,
@@ -216,6 +239,7 @@ export default defineComponent({
         start: new Date(2024, 1, 2, 14, 0),
         end: new Date(2024, 1, 2, 22, 0),
         color: "#f59e0b",
+        num_employees: 1,
       },
 
       // 3rd february
@@ -225,6 +249,7 @@ export default defineComponent({
         start: new Date(2024, 1, 3, 8, 0),
         end: new Date(2024, 1, 3, 18, 0),
         color: "#10b981",
+        num_employees: 2,
       },
 
       // 5th february
@@ -234,6 +259,7 @@ export default defineComponent({
         start: new Date(2024, 1, 5, 6, 0),
         end: new Date(2024, 1, 5, 14, 0),
         color: "#3b82f6",
+        num_employees: 2,
       },
       {
         id: 8,
@@ -241,6 +267,7 @@ export default defineComponent({
         start: new Date(2024, 1, 5, 14, 0),
         end: new Date(2024, 1, 5, 22, 0),
         color: "#f59e0b",
+        num_employees: 2,
       },
 
       // 10th february
@@ -250,6 +277,7 @@ export default defineComponent({
         start: new Date(2024, 1, 10, 10, 0),
         end: new Date(2024, 1, 10, 16, 0),
         color: "#ef4444",
+        num_employees: 1,
       },
 
       // 15th february
@@ -259,6 +287,7 @@ export default defineComponent({
         start: new Date(2024, 1, 15, 7, 0),
         end: new Date(2024, 1, 15, 19, 0),
         color: "#8b5cf6",
+        num_employees: 4,
       },
     ]);
 
@@ -385,5 +414,10 @@ html, body {
 
 .span-green {
   background-color: #065f46;
+}
+
+.scheduler-demo {
+  max-height: 90vh;
+  overflow-y: scroll;
 }
 </style>
