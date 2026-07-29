@@ -51,17 +51,19 @@
     >
       <template #event="{ event }">
         <div class="event-body">
-          <div class="event-title">
-            {{ event.meta?.title }}
-          </div>
-          <div class="event-desc">
-            {{ event.meta?.description }}
-          </div>
-          <div class="event-time">
-            {{ event.start.toLocaleString() }}
-          </div>
-          <div class="event-time">
-            {{ event.end.toLocaleString() }}
+          <div class="event-label">
+            <div class="event-title">
+              {{ event.meta?.title }}
+            </div>
+            <div class="event-desc">
+              {{ event.meta?.description }}
+            </div>
+            <div class="event-time">
+              {{ event.start.toLocaleString() }}
+            </div>
+            <div class="event-time">
+              {{ event.end.toLocaleString() }}
+            </div>
           </div>
         </div>
       </template>
@@ -80,17 +82,19 @@
       >
         <template #event="{ event }">
           <div class="event-body">
-            <div class="event-title">
-              {{ event.meta?.title }}
-            </div>
-            <div class="event-desc">
-              {{ event.meta?.description }}
-            </div>
-            <div class="event-time">
-              {{ event.start.toLocaleString() }}
-            </div>
-            <div class="event-time">
-              {{ event.end.toLocaleString() }}
+            <div class="event-label">
+              <div class="event-title">
+                {{ event.meta?.title }}
+              </div>
+              <div class="event-desc">
+                {{ event.meta?.description }}
+              </div>
+              <div class="event-time">
+                {{ event.start.toLocaleString() }}
+              </div>
+              <div class="event-time">
+                {{ event.end.toLocaleString() }}
+              </div>
             </div>
           </div>
         </template>
@@ -319,6 +323,17 @@ export default defineComponent({
 }
 
 .event-body {
+  width: 100%;
+  height: 100%;
+  overflow: clip;
+}
+
+/* Sticky label stays visible at the left when a wide block is scrolled. */
+.event-label {
+  position: sticky;
+  left: 0;
+  width: max-content;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
