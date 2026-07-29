@@ -72,11 +72,15 @@
           >
             <template v-if="isIdentifierObject(col)">
               <slot :name="`identifier-${col.header_name}-${col.id}`">
-                {{ col.name }}
+                <div class="vs-identifier-cell-label">
+                  {{ col.name }}
+                </div>
               </slot>
             </template>
             <template v-else>
-              {{ col }}
+              <div class="vs-identifier-cell-label">
+                {{ col }}
+              </div>
             </template>
           </div>
         </div>
@@ -524,13 +528,18 @@ export default defineComponent({
 }
 
 .vs-identifier-cell {
-  display: flex;
-  align-items: center;
   position: relative;
-  padding: 0.625rem;
   background-color: #ffffff;
   color: #9ca3af;
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
+}
+
+.vs-identifier-cell-label {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem;
+  width: 100%;
+  height: 100%;
 }
 
 .vs-second-col {
