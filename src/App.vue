@@ -14,6 +14,17 @@
           name="width"
         >
         <label
+          for="rowHeight"
+          class="demo-label"
+        >rowHeight</label>
+        <input
+          id="rowHeight"
+          v-model="options.rowHeight"
+          class="demo-input"
+          type="number"
+          name="width"
+        >
+        <label
           for="scale"
           class="demo-label"
         >Scale</label>
