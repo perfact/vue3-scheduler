@@ -27,6 +27,19 @@
           step="1"
         >
         <label
+          for="identifier_column_width"
+          class="demo-label"
+        >Identifier column width</label>
+        <input
+          id="identifier_column_width"
+          v-model="options.identifier_column_width"
+          class="demo-input"
+          type="number"
+          name="scale"
+          min="0"
+          step="1"
+        >
+        <label
           for="show_shifts"
           class="demo-label"
         >Show Shifts</label>
@@ -138,6 +151,7 @@ export default defineComponent({
       scale: 8,
       timeFormat: "HH:mm",
       dateFormat: "yyyy-MM-dd",
+      identifier_column_width: undefined,
     });
 
     const show_shifts = ref(false);

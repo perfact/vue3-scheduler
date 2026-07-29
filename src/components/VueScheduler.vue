@@ -1,5 +1,10 @@
 <template>
-  <div class="vs-scheduler">
+  <div
+    class="vs-scheduler"
+    :style="{
+      '--identifier-column-width': identifier_column_width,
+    }"
+  >
     <div class="vs-header-left">
       <slot
         name="header-column-identifier"
@@ -29,7 +34,9 @@
     <!-- Headers + Identifers (first column) -->
     <div
       class="vs-first-col"
-      :style="{ gridTemplateColumns: `repeat(${headers.length}, auto)` }"
+      :style="{
+        gridTemplateColumns: `repeat(${headers.length}, var(--identifier-column-width))`,
+      }"
     >
       <!-- Headers -->
       <div class="vs-headers">
@@ -253,6 +260,13 @@ export default defineComponent({
     );
     const scale = computed(() => props.options?.scale || 0.5);
     const resolution = computed(() => props.options?.resizeResolution || 15.0);
+    const identifier_column_width = computed(() => {
+        if (!props.options?.identifier_column_width)  {
+          return 'auto';
+        }
+        return `${props.options?.identifier_column_width}px`;
+      }
+    );
     const dropzones = ref<Array<Target>>();
 
     function generateTimeline() {
@@ -427,6 +441,7 @@ export default defineComponent({
       dropzones,
       scrollLeft,
       onScroll,
+      identifier_column_width,
     };
   },
 });
@@ -440,7 +455,7 @@ export default defineComponent({
 
 .vs-scheduler {
   display: grid;
-  grid-template-columns: minmax(10%, 20%) minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   height: 100%;
   border-radius: 0.5rem;

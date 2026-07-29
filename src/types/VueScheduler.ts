@@ -31,6 +31,7 @@ interface Options {
   timeFormat: string;
   dateFormat: string;
   resizeResolution?: number;
+  identifier_column_width?: number;
 }
 
 interface TimeSpan {
