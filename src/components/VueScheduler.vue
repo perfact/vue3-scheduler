@@ -175,7 +175,13 @@
                 left: `${getElemLeft(start, span.start, cellWidth, scale)}px`,
                 top: `${index * rowHeight}px`,
               }"
-            />
+              @click="() => timespanClicked(span)"
+            >
+              <slot
+                name="timespan-content"
+                :span="span"
+              />
+            </div>
           </template>
           <div
             v-for="(_time, timeIdx) in getTimeline"
@@ -263,7 +269,10 @@ export default defineComponent({
       default: [],
     },
   },
-  emits: ["event-activate"],
+  emits: [
+    "event-activate",
+    "timespan-clicked",
+  ],
   setup(props, { emit }) {
     const cellWidth = computed(
       () => props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth,
@@ -372,6 +381,10 @@ export default defineComponent({
       emit("event-activate", timelineEvent);
     }
 
+    function timespanClicked(timespan: TimeSpan) {
+      emit("timespan-clicked", timespan);
+    }
+
     // scrollLeft and onScroll are used to sync the header with the timeline
     // events when scrolling
     const scrollLeft = ref(0)
@@ -462,6 +475,7 @@ export default defineComponent({
       onScroll,
       identifier_column_width,
       isIdentifierObject,
+      timespanClicked,
     };
   },
 });
@@ -605,6 +619,7 @@ export default defineComponent({
   padding: 0.625rem;
   border-right: 1px solid #e5e7eb;
   color: #ffffff;
+  pointer-events: none;
 }
 
 .vs-timespan {

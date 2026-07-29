@@ -14,6 +14,7 @@
       '--num-headers': headers.length,
     }"
     @event-activate="(event) => emit('event-activate', event)"
+    @timespan-clicked="(timespan) => emit('timespan-clicked', timespan)"
   >
     <!-- Header row above the identifiers -->
     <template #header-column-identifier>
@@ -354,7 +355,10 @@ export default defineComponent({
           default: '#ef4444',
         }
     },
-    emits: ["event-activate"],
+    emits: [
+      "event-activate",
+      "timespan-clicked",
+    ],
     setup(props, { emit }) {
         const slots = useSlots();
         const scale = computed(() => props.options.scale ?? 0.5);
