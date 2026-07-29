@@ -96,17 +96,19 @@
         >
           <template #event="{ event }">
             <div class="event-body">
-              <div class="event-title">
-                {{ event.meta?.title }}
-              </div>
-              <div class="event-desc">
-                {{ event.meta?.description }}
-              </div>
-              <div class="event-time">
-                {{ event.start.toLocaleString() }}
-              </div>
-              <div class="event-time">
-                {{ event.end.toLocaleString() }}
+              <div class="event-label">
+                <div class="event-title">
+                  {{ event.meta?.title }}
+                </div>
+                <div class="event-desc">
+                  {{ event.meta?.description }}
+                </div>
+                <div class="event-time">
+                  {{ event.start.toLocaleString() }}
+                </div>
+                <div class="event-time">
+                  {{ event.end.toLocaleString() }}
+                </div>
               </div>
             </div>
           </template>
