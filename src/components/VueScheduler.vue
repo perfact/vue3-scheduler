@@ -63,7 +63,7 @@
         >
           <div
             v-for="(col, col_index) in identifier"
-            :key="isIdentifierObject(col) ? col.id : col_index"
+            :key="col_index"
             class="vs-identifier-cell"
             :style="{
               'min-height': `${rowHeight}px`,
@@ -175,7 +175,7 @@
                 left: `${getElemLeft(start, span.start, cellWidth, scale)}px`,
                 top: `${index * rowHeight}px`,
               }"
-              @click="() => timespanClicked(span)"
+              @click="timespanClicked(span)"
             >
               <slot
                 name="timespan-content"

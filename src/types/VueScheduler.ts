@@ -43,7 +43,7 @@ interface TimeSpan {
 
 
 /**
- * Indentifier object which can be passed to the Scheduler components.
+ * Identifier object which can be passed to the Scheduler components.
  *
  * @interface IdentifierObject
  * @typedef {IdentifierObject}

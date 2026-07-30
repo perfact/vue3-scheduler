@@ -22,7 +22,7 @@
           v-model="options.rowHeight"
           class="demo-input"
           type="number"
-          name="width"
+          name="rowHeight"
         >
         <label
           for="scale"
