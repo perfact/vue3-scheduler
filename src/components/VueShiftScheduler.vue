@@ -76,7 +76,8 @@
                 bottom: `${tick.percent}%`
               }"
             >
-              {{ tick.value }}
+              <!-- Round tick value to 2 decimal places if necessary -->
+              {{ Math.round((tick.value + Number.EPSILON) * 100) / 100 }}
             </div>
           </div>
         </div>
@@ -255,12 +256,17 @@
                   height: `${(block.required / maxAxisValue) * 100}%`
                 }"
               >
-                <span
-                  v-if="block.required > 0"
-                  class="vs-staff-planning-label"
+                <slot
+                  name="required-worktime-block-label"
+                  :block
                 >
-                  {{ block.required.toFixed(2) }} h
-                </span>
+                  <span
+                    v-if="block.required > 0"
+                    class="vs-staff-planning-label"
+                  >
+                    {{ block.required.toFixed(2) }} h
+                  </span>
+                </slot>
               </div>            
             </slot>
           </div>
