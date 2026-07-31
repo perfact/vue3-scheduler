@@ -14,6 +14,17 @@
           name="width"
         >
         <label
+          for="rowHeight"
+          class="demo-label"
+        >rowHeight</label>
+        <input
+          id="rowHeight"
+          v-model="options.rowHeight"
+          class="demo-input"
+          type="number"
+          name="rowHeight"
+        >
+        <label
           for="scale"
           class="demo-label"
         >Scale</label>
@@ -62,6 +73,7 @@
         :start="start"
         :spans="timespans"
         @event-activate="handle_event_activate"
+        @timespan-clicked="handle_timespan_clicked"
       >
         <template #event="{ event }">
           <div class="event-body">
@@ -93,6 +105,7 @@
           :spans="timespans"
           :shifts="shifts"
           @event-activate="handle_event_activate"
+          @timespan-clicked="handle_timespan_clicked"
         >
           <template #event="{ event }">
             <div class="event-body">
@@ -133,7 +146,6 @@ export default defineComponent({
   },
   setup() {
     const timelineHeaders = ref(["Route", "Start time"]);
-
     const timelineItems = [
       ["BMON-A", "08:00am"],
       ["BMON-B", "08:00am"],
@@ -295,6 +307,10 @@ export default defineComponent({
       alert('Event "event-activate" emitted: ' + JSON.stringify(event));
     }
 
+    function handle_timespan_clicked(span: TimeSpan) {
+      alert('Event "timespan-clicked" emitted: ' + JSON.stringify(span));
+    }
+
     return {
       timelineHeaders,
       timelineItems,
@@ -306,6 +322,7 @@ export default defineComponent({
       shifts,
       show_shifts,
       handle_event_activate,
+      handle_timespan_clicked,
     };
   },
 });

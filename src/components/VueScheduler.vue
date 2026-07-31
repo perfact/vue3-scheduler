@@ -49,7 +49,9 @@
             'max-height': `${rowHeight}px`,
           }"
         >
-          {{ header }}
+          <slot :name="`header-${header}`">
+            {{ header }}
+          </slot>
         </div>
       </div>
       <!-- Identifiers -->
@@ -68,7 +70,18 @@
               'max-height': `${rowHeight}px`,
             }"
           >
-            {{ col }}
+            <template v-if="isIdentifierObject(col)">
+              <slot :name="`identifier-${col.header_name}-${col.id}`">
+                <div class="vs-identifier-cell-label">
+                  {{ col.name }}
+                </div>
+              </slot>
+            </template>
+            <template v-else>
+              <div class="vs-identifier-cell-label">
+                {{ col }}
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -162,7 +175,13 @@
                 left: `${getElemLeft(start, span.start, cellWidth, scale)}px`,
                 top: `${index * rowHeight}px`,
               }"
-            />
+              @click="timespanClicked(span)"
+            >
+              <slot
+                name="timespan-content"
+                :span="span"
+              />
+            </div>
           </template>
           <div
             v-for="(_time, timeIdx) in getTimeline"
@@ -205,7 +224,7 @@ import { Target, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { format } from "date-fns";
 import Task from "./Task.vue";
-import { Options, Event, TimeSpan } from "../types/VueScheduler";
+import { Options, Event, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
 
 const DEFAULT_OPTIONS: Options = {
@@ -232,7 +251,7 @@ export default defineComponent({
       required: true,
     },
     identifiers: {
-      type: Array,
+      type: Array as PropType<(string | IdentifierObject)[][]>,
       required: true,
     },
     options: {
@@ -250,7 +269,10 @@ export default defineComponent({
       default: [],
     },
   },
-  emits: ["event-activate"],
+  emits: [
+    "event-activate",
+    "timespan-clicked",
+  ],
   setup(props, { emit }) {
     const cellWidth = computed(
       () => props.options?.cellWidth || DEFAULT_OPTIONS.cellWidth,
@@ -359,11 +381,21 @@ export default defineComponent({
       emit("event-activate", timelineEvent);
     }
 
+    function timespanClicked(timespan: TimeSpan) {
+      emit("timespan-clicked", timespan);
+    }
+
     // scrollLeft and onScroll are used to sync the header with the timeline
     // events when scrolling
     const scrollLeft = ref(0)
     function onScroll(e: globalThis.Event) {
       scrollLeft.value = (e.currentTarget as HTMLElement).scrollLeft
+    }
+
+    function isIdentifierObject(
+      value: string | IdentifierObject
+    ): value is IdentifierObject {
+      return typeof value === 'object' && value !== null;
     }
 
     watchEffect((onCleanup) => {
@@ -442,6 +474,8 @@ export default defineComponent({
       scrollLeft,
       onScroll,
       identifier_column_width,
+      isIdentifierObject,
+      timespanClicked,
     };
   },
 });
@@ -508,13 +542,18 @@ export default defineComponent({
 }
 
 .vs-identifier-cell {
-  display: flex;
-  align-items: center;
   position: relative;
-  padding: 0.625rem;
   background-color: #ffffff;
   color: #9ca3af;
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
+}
+
+.vs-identifier-cell-label {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem;
+  width: 100%;
+  height: 100%;
 }
 
 .vs-second-col {
@@ -580,6 +619,7 @@ export default defineComponent({
   padding: 0.625rem;
   border-right: 1px solid #e5e7eb;
   color: #ffffff;
+  pointer-events: none;
 }
 
 .vs-timespan {

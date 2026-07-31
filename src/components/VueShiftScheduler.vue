@@ -14,6 +14,7 @@
       '--num-headers': headers.length,
     }"
     @event-activate="(event) => emit('event-activate', event)"
+    @timespan-clicked="(timespan) => emit('timespan-clicked', timespan)"
   >
     <!-- Header row above the identifiers -->
     <template #header-column-identifier>
@@ -75,7 +76,8 @@
                 bottom: `${tick.percent}%`
               }"
             >
-              {{ tick.value }}
+              <!-- Round tick value to 2 decimal places if necessary -->
+              {{ Math.round((tick.value + Number.EPSILON) * 100) / 100 }}
             </div>
           </div>
         </div>
@@ -254,12 +256,17 @@
                   height: `${(block.required / maxAxisValue) * 100}%`
                 }"
               >
-                <span
-                  v-if="block.required > 0"
-                  class="vs-staff-planning-label"
+                <slot
+                  name="required-worktime-block-label"
+                  :block
                 >
-                  {{ block.required.toFixed(2) }} h
-                </span>
+                  <span
+                    v-if="block.required > 0"
+                    class="vs-staff-planning-label"
+                  >
+                    {{ block.required.toFixed(2) }} h
+                  </span>
+                </slot>
               </div>            
             </slot>
           </div>
@@ -289,7 +296,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType, useSlots, computed } from "vue";
-import { Options, TimeSpan } from "../types/VueScheduler";
+import { Options, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { Shift, ProductionEvent, StaffTimelineBlock } from "../types/VueShiftScheduler";
 import VueScheduler from "./VueScheduler.vue";
 
@@ -317,7 +324,7 @@ export default defineComponent({
           required: true,
         },
         identifiers: {
-          type: Array,
+          type: Array as PropType<(string | IdentifierObject)[][]>,
           required: true,
         },
         options: {
@@ -354,7 +361,10 @@ export default defineComponent({
           default: '#ef4444',
         }
     },
-    emits: ["event-activate"],
+    emits: [
+      "event-activate",
+      "timespan-clicked",
+    ],
     setup(props, { emit }) {
         const slots = useSlots();
         const scale = computed(() => props.options.scale ?? 0.5);

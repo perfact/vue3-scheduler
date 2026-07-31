@@ -42,4 +42,19 @@ interface TimeSpan {
 }
 
 
-export type { Event, Options, TimeSpan };
+/**
+ * Identifier object which can be passed to the Scheduler components.
+ *
+ * @interface IdentifierObject
+ * @typedef {IdentifierObject}
+ * 
+ * @prop {string} id - ID of the identifier object
+ * @prop {string} name - Name of the identifier which will be displayed
+ */
+interface IdentifierObject {
+  id: string;
+  name: string;
+  header_name: string,
+}
+
+export type { Event, Options, TimeSpan, IdentifierObject };
