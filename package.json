@@ -1,7 +1,7 @@
 {
   "name": "vue3-scheduler",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "scripts": {
     "dev": "vite",
     "build": "eslint src && vue-tsc && vite build",
