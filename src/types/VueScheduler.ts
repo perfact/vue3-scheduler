@@ -12,6 +12,12 @@
  * @prop {string} [meta.class] - Class of the event
  * @prop {string} [meta.description] - Description of the event
  * @prop {string} [meta.title] - Title of the event
+ * @prop {boolean} [may_move_time] - Whether start and end may be shifted in
+ *   time. Omitted means allowed.
+ * @prop {boolean} [may_move_row] - Whether the event may be dragged onto
+ *   another identifier row. Omitted means allowed.
+ * @prop {boolean} [may_resize] - Whether the duration may be changed.
+ *   Omitted means allowed.
  */
 interface Event {
   identiferIdx: number;
@@ -22,6 +28,11 @@ interface Event {
     description?: string;
     title?: string;
   };
+  // Interaction permissions. All three default to allowed when omitted, so
+  // callers that do not care about permissions keep the previous behaviour.
+  may_move_time?: boolean;
+  may_move_row?: boolean;
+  may_resize?: boolean;
 }
 
 interface Options {

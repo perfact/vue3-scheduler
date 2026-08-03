@@ -1,7 +1,7 @@
 <template>
   <div
     ref="elem"
-    :class="['event', event.meta?.class]"
+    :class="['event', event.meta?.class, { 'event--static': !mayDrag }]"
     :style="{
       height: `${rowHeight - 1}px`,
       width: `${getElemWidth(event.start, event.end, cellWidth, scale)}px`,
@@ -18,8 +18,9 @@
         :event="event"
       />
     </div>
-    <!-- resize handle -->
+    <!-- resize handle, only shown when the duration may actually be changed -->
     <svg
+      v-if="mayResize"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 192 512"
       class="resize-handle"
@@ -39,7 +40,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, PropType, ref } from "vue";
+import { computed, defineComponent, PropType, ref } from "vue";
 import interact from "interactjs";
 import { Target } from "@interactjs/types";
 import { watchEffect } from "vue";
@@ -75,11 +76,25 @@ export default defineComponent({
     const elem = ref<Target>();
     const position = { x: 0, y: 0 };
 
+    // Interaction permissions. An omitted flag means allowed, so events
+    // without any permission information behave as before.
+    const mayResize = computed(() => props.event.may_resize !== false);
+    const mayMoveTime = computed(() => props.event.may_move_time !== false);
+    const mayMoveRow = computed(() => props.event.may_move_row !== false);
+    const mayDrag = computed(() => mayMoveTime.value || mayMoveRow.value);
+    // Restrict dragging to the axis the caller allows: horizontally shifts the
+    // event in time, vertically moves it onto another identifier row.
+    const lockAxis = computed<"x" | "y" | "xy">(() => {
+      if (mayMoveTime.value && mayMoveRow.value) return "xy";
+      return mayMoveTime.value ? "x" : "y";
+    });
+
     watchEffect((onCleanup) => {
       const element = elem.value;
       if (!element) return;
       interact(element)
         .resizable({
+          enabled: mayResize.value,
           // resize from all edges and corners
           edges: { left: false, right: true, bottom: false, top: false },
           listeners: {
@@ -96,6 +111,8 @@ export default defineComponent({
           inertia: false,
         })
         .draggable({
+          enabled: mayDrag.value,
+          lockAxis: lockAxis.value,
           origin: { x: 0, y: 0 },
           listeners: {
             move: function (event) {
@@ -163,6 +180,8 @@ export default defineComponent({
       getElemLeft,
       getElemRow,
       elem,
+      mayResize,
+      mayDrag,
     };
   },
 });
@@ -189,6 +208,12 @@ export default defineComponent({
 .draggable {
   touch-action: none;
   user-select: none;
+}
+
+/* Events the caller does not allow to be moved. interact.js only manages the
+   cursor while dragging is enabled, so it is set explicitly here. */
+.event--static {
+  cursor: default;
 }
 
 .resize-handle {
