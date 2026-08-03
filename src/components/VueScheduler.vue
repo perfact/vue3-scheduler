@@ -369,8 +369,13 @@ export default defineComponent({
         timelineEvent.end.setMinutes(timelineEvent.end.getMinutes() + minutes),
       );
 
+      // Use math.round because of floating-point inaccuracy caused by
+      // interactjs when dragging. Math.floor may be wrong when the y value
+      // is really close to the bigger number. For example the following
+      // (actual) y value 49.99998474121094 was rounded to 49 with floor but
+      // it should be rounded to 50, so we use Math.round.
       const newIx =
-        timelineEvent.identiferIdx + Math.floor(y / rowHeight.value);
+        timelineEvent.identiferIdx + Math.round(y / rowHeight.value);
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newIx),
         props.identifiers.length - 1,
