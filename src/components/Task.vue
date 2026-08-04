@@ -83,7 +83,9 @@ export default defineComponent({
     const mayMoveRow = computed(() => props.event.may_move_row !== false);
     const mayDrag = computed(() => mayMoveTime.value || mayMoveRow.value);
     // Restrict dragging to the axis the caller allows: horizontally shifts the
-    // event in time, vertically moves it onto another identifier row.
+    // event in time, vertically moves it onto another identifier row. This is
+    // only relevant when dragging is enabled, so at least one movement flag is
+    // true; when time movement is disabled, row movement must be enabled.
     const lockAxis = computed<"x" | "y" | "xy">(() => {
       if (mayMoveTime.value && mayMoveRow.value) return "xy";
       return mayMoveTime.value ? "x" : "y";
