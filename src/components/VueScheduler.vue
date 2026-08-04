@@ -117,10 +117,15 @@
             'max-height': `${rowHeight}px`,
           }"
         >
-          <span>
-            {{ time.formattedDate }}
-            {{ time.formattedTime }}
-          </span>
+          <slot
+            name="timeline-cell-content"
+            :time
+          >
+            <span>
+              {{ time.formattedDate }}
+              {{ time.formattedTime }}
+            </span>
+          </slot>
         </div>
       </div>
 
