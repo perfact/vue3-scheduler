@@ -193,6 +193,63 @@ export default defineComponent({
         },
         labortime: 16
       },
+      // Permission demo cases. Omitting a flag means allowed, so the two events
+      // above stay fully interactive.
+      {
+        identiferIdx: 2,
+        start: new Date(2024, 1, 1, 6, 0),
+        end: new Date(2024, 1, 1, 14, 0),
+        meta: {
+          title: "Locked",
+          description: "no drag, no resize, no handle",
+          class: "event-emerald",
+        },
+        may_move_time: false,
+        may_move_row: false,
+        may_resize: false,
+        labortime: 8
+      },
+      {
+        identiferIdx: 3,
+        start: new Date(2024, 1, 1, 6, 0),
+        end: new Date(2024, 1, 1, 14, 0),
+        meta: {
+          title: "Time only",
+          description: "horizontal drag and resize, fixed row",
+          class: "event-orange",
+        },
+        // Resizing only moves the right edge, so it changes the times and not
+        // the row - it stays allowed without the permission to move rows.
+        may_move_time: true,
+        may_move_row: false,
+        labortime: 8
+      },
+      {
+        identiferIdx: 4,
+        start: new Date(2024, 1, 1, 6, 0),
+        end: new Date(2024, 1, 1, 14, 0),
+        meta: {
+          title: "Row only",
+          description: "vertical drag, fixed time",
+          class: "event-emerald",
+        },
+        may_move_time: false,
+        may_move_row: true,
+        may_resize: false,
+        labortime: 8
+      },
+      {
+        identiferIdx: 5,
+        start: new Date(2024, 1, 1, 6, 0),
+        end: new Date(2024, 1, 1, 14, 0),
+        meta: {
+          title: "Move, no resize",
+          description: "drag in both axes, duration fixed",
+          class: "event-orange",
+        },
+        may_resize: false,
+        labortime: 8
+      },
     ]);
 
     const timespans = ref<TimeSpan[]>([
