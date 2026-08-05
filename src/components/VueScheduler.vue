@@ -66,8 +66,8 @@
             :key="col_index"
             class="vs-identifier-cell"
             :style="{
-              'min-height': `${rowHeight}px`,
-              'max-height': `${rowHeight}px`,
+              'min-height': `${rowHeights[index]}px`,
+              'max-height': `${rowHeights[index]}px`,
             }"
           >
             <template v-if="isIdentifierObject(col)">
@@ -148,6 +148,7 @@
           :cell-width="cellWidth"
           :scale="scale"
           :start="start"
+          :top="getEventTop(event)"
           @resize="eventResized"
           @dragged="eventDragged"
           @activate="eventActivated"
@@ -175,10 +176,10 @@
               v-if="!span.timelines || span.timelines.includes(index)"
               :class="['vs-timespan', span.color]"
               :style="{
-                height: `${rowHeight}px`,
+                height: `${rowHeights[index]}px`,
                 width: `${getElemWidth(span.start, span.end, cellWidth, scale)}px`,
                 left: `${getElemLeft(start, span.start, cellWidth, scale)}px`,
-                top: `${index * rowHeight}px`,
+                top: `${rowOffsets[index]}px`,
               }"
               @click="timespanClicked(span)"
             >
@@ -195,8 +196,8 @@
             :style="{
               'min-width': `${cellWidth}px`,
               'max-width': `${cellWidth}px`,
-              'min-height': `${rowHeight}px`,
-              'max-height': `${rowHeight}px`,
+              'min-height': `${rowHeights[index]}px`,
+              'max-height': `${rowHeights[index]}px`,
             }"
           />
         </div>
@@ -217,7 +218,7 @@
           v-for="(_, index) in identifiers"
           :key="`sep-${index}`"
           class="vs-row-sep"
-          :style="{ top: `${(index + 1) * rowHeight - 1}px` }"
+          :style="{ top: `${rowOffsets[index] + rowHeights[index] - 1}px` }"
         />
       </div>
     </div>
@@ -231,6 +232,7 @@ import { format } from "date-fns";
 import Task from "./Task.vue";
 import { Options, Event, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
+import { calculateEventLayout } from "../util/eventlayout";
 
 const DEFAULT_OPTIONS: Options = {
   cellWidth: 100,
@@ -364,6 +366,13 @@ export default defineComponent({
       y: number;
       timelineEvent: Event;
     }) {
+      // Get snapshots of orig top position, offset and heights. It is 
+      // important that we do this before we modify start/end of the event 
+      // because otherwise Vue would rerender and update the values
+      const origTop = getEventTop(timelineEvent);
+      const origRowOffsets = [...rowOffsets.value];
+      const origRowHeights = [...rowHeights.value];
+
       const minutes = (x / cellWidth.value) * scale.value * 60.0;
       timelineEvent.start = new Date(
         timelineEvent.start.setMinutes(
@@ -379,10 +388,25 @@ export default defineComponent({
       // is really close to the bigger number. For example the following
       // (actual) y value 49.99998474121094 was rounded to 49 with floor but
       // it should be rounded to 50, so we use Math.round.
-      const newIx =
-        timelineEvent.identiferIdx + Math.round(y / rowHeight.value);
+      const rawNewTop = origTop + y;
+      const newTop = Math.round(rawNewTop / rowHeight.value) * rowHeight.value;
+
+      // fallback in case of floating-point errors
+      let newRowIdx = origRowOffsets.length - 1;
+      for (let i = 0; i < origRowOffsets.length; i++) {
+        // Check in which row offset our new top value is placed
+        if (
+          newTop >= origRowOffsets[i] && 
+          newTop < origRowOffsets[i] + origRowHeights[i]
+        ) {
+          newRowIdx = i;
+          break;
+        }
+      }
+
+
       timelineEvent.identiferIdx = Math.min(
-        Math.max(0, newIx),
+        Math.max(0, newRowIdx),
         props.identifiers.length - 1,
       );
     }
@@ -406,6 +430,44 @@ export default defineComponent({
       value: string | IdentifierObject
     ): value is IdentifierObject {
       return typeof value === 'object' && value !== null;
+    }
+
+    // Event layout calculation
+    const eventLayout = computed(() => calculateEventLayout(props.events));
+
+    // Calculate lane count for each row
+    const rowLaneCounts = computed(() => {
+      // Each row starts with one lane
+      const counts = props.identifiers.map(() => 1);
+      // Increase lane count according to calculated event layout
+      eventLayout.value.forEach((layout, event) => {
+        counts[event.identiferIdx] = Math.max(counts[event.identiferIdx], layout.lane + 1);
+      });
+      return counts;
+    });
+
+    // Calculate height for each row
+    const rowHeights = computed(() =>
+      rowLaneCounts.value.map((count) => count * rowHeight.value),
+    );
+
+    // Caclucatge offset for each row in px
+    const rowOffsets = computed(() => {
+      const offsets: number[] = [];
+      let accumulated_offset = 0;
+      rowHeights.value.forEach((height) => {
+        offsets.push(accumulated_offset);
+        accumulated_offset += height;
+      });
+      return offsets;
+    });
+
+    // Get the top value for an event
+    function getEventTop(event: Event): number {
+      // Get lane of event
+      const lane = eventLayout.value.get(event)?.lane ?? 0;
+      // Top value is: row offset + (lane * rowHeight)
+      return rowOffsets.value[event.identiferIdx] + (lane * rowHeight.value);
     }
 
     watchEffect((onCleanup) => {
@@ -486,6 +548,9 @@ export default defineComponent({
       identifier_column_width,
       isIdentifierObject,
       timespanClicked,
+      rowHeights,
+      rowOffsets,
+      getEventTop,
     };
   },
 });
@@ -556,6 +621,7 @@ export default defineComponent({
   background-color: #ffffff;
   color: #9ca3af;
   box-shadow: inset 0 -1px 0 0 #e5e7eb;
+  transition: min-height 0.2s ease, max-height 0.2s ease;
 }
 
 .vs-identifier-cell-label {
@@ -611,6 +677,7 @@ export default defineComponent({
   background-color: #e5e7eb;
   z-index: 2;
   pointer-events: none;
+  transition: top 0.2s ease;
 }
 
 .dropzone.drop-target {
@@ -630,10 +697,12 @@ export default defineComponent({
   border-right: 1px solid #e5e7eb;
   color: #ffffff;
   pointer-events: none;
+  transition: min-height 0.2s ease, max-height 0.2s ease;
 }
 
 .vs-timespan {
   position: absolute;
+  transition: height 0.2s ease, top 0.2s ease;
 }
 
 .vs-header-left {

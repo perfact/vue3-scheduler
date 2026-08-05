@@ -68,4 +68,15 @@ interface IdentifierObject {
   header_name: string,
 }
 
-export type { Event, Options, TimeSpan, IdentifierObject };
+/**
+ * EventLayout interface. Only holds the lane for the moment. Could be extended
+ * with cascading layout in the future.
+ * 
+ * @prop {number} lane - Lane of the event in a row. Controls where to put an
+ *  event in a row when there are multiple overlaping events.
+ */
+interface EventLayout {
+  lane: number;
+}
+
+export type { Event, Options, TimeSpan, IdentifierObject, EventLayout };
