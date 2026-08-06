@@ -15,7 +15,7 @@ function overlaps(
 }
 
 // Build clusters of events that overlap
-function buildClusters(sorted: Event[]): Event[][] {
+function buildOverlappingEventClusters(sorted: Event[]): Event[][] {
   const clusters: Event[][] = [];
   let current: Event[] = [];
   let currentEnd = -Infinity;
@@ -39,7 +39,7 @@ function buildClusters(sorted: Event[]): Event[][] {
   return clusters;
 }
 
-function buildGreedyCluster(cluster: Event[]): Map<Event, number> {
+function buildGreedyEventLaneMapping(cluster: Event[]): Map<Event, number> {
   const sorted = [...cluster].sort((a, b) => a.start.getTime() - b.start.getTime());
   const laneEndTimes: number[] = [];
   const mapping = new Map<Event, number>();
@@ -97,18 +97,19 @@ function compact(mapping: Map<Event, number>): Map<Event, number> {
 export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
   const layout = new Map<Event, EventLayout>();
   const byRow = new Map<number, Event[]>();
-
+  // Collect events for each row
   events.forEach((event) => {
     const rowEvents = byRow.get(event.identiferIdx) ?? [];
     rowEvents.push(event);
     byRow.set(event.identiferIdx, rowEvents);
   });
-
+  // Calculate lanes for each row
   byRow.forEach((rowEvents) => {
+    // First get a sorted list of all events
     const sorted = [...rowEvents].sort(
       (eventA, eventB) => eventA.start.getTime() - eventB.start.getTime()
     );
-    const clusters = buildClusters(sorted);
+    const eventClusters = buildOverlappingEventClusters(sorted);
 
     const mostRecent = rowEvents.find(
       (event) =>
@@ -116,25 +117,29 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
         event.preferredLaneAt === dragSequenceCounter,
     );
 
-    clusters.forEach((cluster) => {
+    eventClusters.forEach((cluster) => {
       const containsMostRecent =
         mostRecent !== undefined && cluster.includes(mostRecent);
 
-      let mapping: Map<Event, number>;
+      let eventLaneMapping: Map<Event, number>;
 
       if (!containsMostRecent) {
         // If our current cluster does not contain the most recent change,
-        // leave order of the events unchanged
+        // leave order of the events unchanged.
+        // First check if we have a lane memmorized for all events inside the
+        // cluster.
         const hasFullMemory = cluster.every((event) => laneMemory.has(event));
-        mapping = hasFullMemory
+        // If we have all events memmorized, use the memmorized event-lane
+        // mapping. Otherwise build a new mapping with the greedy algorithm.
+        eventLaneMapping = hasFullMemory
           ? new Map(cluster.map((event) => [event, laneMemory.get(event)!]))
-          : buildGreedyCluster(cluster);
+          : buildGreedyEventLaneMapping(cluster);
       } else {
-        // If our cluster contains the most recent change, then build a greedy
-        // cluster
-        mapping = buildGreedyCluster(cluster);
-        const laneCount = new Set(mapping.values()).size;
-        const currentLane = mapping.get(mostRecent!)!;
+        // If our cluster contains the most recent change, then we have to
+        // refresh our mapping. We build a new mapping with the greedy algo.
+        eventLaneMapping = buildGreedyEventLaneMapping(cluster);
+        const laneCount = new Set(eventLaneMapping.values()).size;
+        const currentLane = eventLaneMapping.get(mostRecent!)!;
         const desiredLane = Math.min(
           mostRecent!.preferredLane ?? currentLane,
           laneCount - 1,
@@ -147,7 +152,7 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
           // Get all events that overlap with the mostRecent event, because
           // we have to adjust their lanes
           const displaced: Event[] = [];
-          mapping.forEach((lane, event) => {
+          eventLaneMapping.forEach((lane, event) => {
             if (event === mostRecent || lane !== desiredLane) return;
             const event_overlaps = overlaps(
               mostRecentStart,
@@ -160,8 +165,8 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
             }
           });
           // We know mostRecent is not undefined/null, that why we use mostRecent!
-          mapping.set(mostRecent!, desiredLane);
-
+          eventLaneMapping.set(mostRecent!, desiredLane);
+          // Assign a new lane index for all displaced events
           displaced.forEach((event) => {
             const eventStart = event.start.getTime();
             const eventEnd = event.end.getTime();
@@ -169,7 +174,7 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
             // Calculate new lane index which does not have a conflict with
             // other events
             while (true) {
-              const conflict = Array.from(mapping.entries()).some(
+              const conflict = Array.from(eventLaneMapping.entries()).some(
                 ([otherEvent, otherLane]) =>
                   otherEvent !== event &&
                   otherLane === laneIdx &&
@@ -183,12 +188,12 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
               if (!conflict) break;
               laneIdx++;
             }
-            mapping.set(event, laneIdx);
+            eventLaneMapping.set(event, laneIdx);
           });
         }
       }
       // Remove gaps between lanes
-      const compacted = compact(mapping);
+      const compacted = compact(eventLaneMapping);
       compacted.forEach((lane, event) => {
         layout.set(event, { lane });
         laneMemory.set(event, lane);
