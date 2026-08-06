@@ -341,6 +341,8 @@ export default defineComponent({
     }) {
       const width = event.rect.width;
       let minutes = Math.round((width / cellWidth.value) * scale.value * 60.0);
+      const origTop = getEventTop(timelineEvent);
+      const origRowOffsets = [...rowOffsets.value];
 
       const distance = minutes % resolution.value;
       if (distance > resolution.value / 2) {
@@ -359,6 +361,16 @@ export default defineComponent({
         ),
       );
       timelineEvent.end = endDateObject;
+
+      // Calculate the preffered lane base on the position where the user
+      // dragged the event
+      const relativeTop = origTop - origRowOffsets[timelineEvent.identiferIdx];
+      
+      timelineEvent.preferredLane = Math.max(
+        0,
+        Math.round(relativeTop / rowHeight.value),
+      );
+      timelineEvent.preferredLaneAt = nextDragSequence();
     }
 
     function eventDragged({

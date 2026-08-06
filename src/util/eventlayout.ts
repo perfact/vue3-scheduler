@@ -165,16 +165,19 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
             }
           });
           // We know mostRecent is not undefined/null, that why we use mostRecent!
-          eventLaneMapping.set(mostRecent!, desiredLane);
+          const draft = new Map(eventLaneMapping);
+          draft.set(mostRecent, desiredLane);
+
           // Assign a new lane index for all displaced events
-          displaced.forEach((event) => {
+          let desiredLane_can_be_taken = true;
+          for (const event of displaced) {
             const eventStart = event.start.getTime();
             const eventEnd = event.end.getTime();
-            let laneIdx = 0;
+            let assigned = -1;
             // Calculate new lane index which does not have a conflict with
             // other events
-            while (true) {
-              const conflict = Array.from(eventLaneMapping.entries()).some(
+            for (let laneIdx = 0; laneIdx < laneCount; laneIdx++) {
+              const conflict = Array.from(draft.entries()).some(
                 ([otherEvent, otherLane]) =>
                   otherEvent !== event &&
                   otherLane === laneIdx &&
@@ -185,11 +188,22 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
                     otherEvent.end.getTime()
                   ),
               );
-              if (!conflict) break;
-              laneIdx++;
+              if (!conflict) {
+                assigned = laneIdx;
+                break;
+              }
             }
-            eventLaneMapping.set(event, laneIdx);
-          });
+
+            if (assigned === -1) {
+              desiredLane_can_be_taken = false;
+              break;
+            }
+            draft.set(event, assigned);
+          }
+          // Commit lane changes if they are possible
+          if (desiredLane_can_be_taken) {
+            eventLaneMapping = draft;
+          }
         }
       }
       // Remove gaps between lanes
