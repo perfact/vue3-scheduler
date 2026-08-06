@@ -71,7 +71,10 @@
             }"
           >
             <template v-if="isIdentifierObject(col)">
-              <slot :name="`identifier-${col.header_name}-${col.id}`">
+              <slot
+                :name="`identifier-${col.header_name}-${col.id}`"
+                :contains_overlaps="rowHeights[index] > rowHeight"
+              >
                 <div class="vs-identifier-cell-label">
                   {{ col.name }}
                 </div>
