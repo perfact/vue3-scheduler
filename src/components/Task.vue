@@ -104,6 +104,17 @@ export default defineComponent({
     watchEffect((onCleanup) => {
       const element = elem.value;
       if (!element) return;
+
+      const rowHeightValue = props.rowHeight || 50;
+
+      function snapYOnly(x: number, y: number) {
+        const snappedY = Math.round(y / (rowHeightValue)) * (rowHeightValue);
+        return {
+          x, // Return x at it was, we dont want x snapping, only y snapping
+          y: snappedY,
+        };
+      }
+
       interact(element)
         .resizable({
           enabled: mayResize.value,
@@ -167,12 +178,7 @@ export default defineComponent({
           },
           modifiers: [
             interact.modifiers.snap({
-              targets: [
-                interact.snappers.grid({
-                  x: props.cellWidth || 100,
-                  y: props.rowHeight || 50,
-                }),
-              ],
+              targets: [snapYOnly],
               range: Infinity,
               relativePoints: [{ x: 0, y: 0 }],
               offset: "parent",
