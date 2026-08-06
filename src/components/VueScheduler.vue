@@ -232,7 +232,7 @@ import { format } from "date-fns";
 import Task from "./Task.vue";
 import { Options, Event, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
-import { calculateEventLayout } from "../util/eventlayout";
+import { calculateEventLayout, nextDragSequence } from "../util/eventlayout";
 
 const DEFAULT_OPTIONS: Options = {
   cellWidth: 100,
@@ -404,6 +404,14 @@ export default defineComponent({
         }
       }
 
+      // Calculate the preffered lane base on the position where the user
+      // dragged the event
+      const relativeTop = newTop - origRowOffsets[newRowIdx];
+      timelineEvent.preferredLane = Math.max(
+        0,
+        Math.round(relativeTop / rowHeight.value),
+      );
+      timelineEvent.preferredLaneAt = nextDragSequence();
 
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newRowIdx),
