@@ -79,6 +79,10 @@ export default defineComponent({
       type: Number,
       required: true,
     },
+    dragResolutionMinutes: {
+      type: Number,
+      default: 5,
+    },
   },
   emits: ["resize", "dragged", "activate"],
   setup(props, { emit }) {
@@ -107,12 +111,13 @@ export default defineComponent({
 
       const rowHeightValue = props.rowHeight || 50;
 
-      function snapYOnly(x: number, y: number) {
-        const snappedY = Math.round(y / (rowHeightValue)) * (rowHeightValue);
-        return {
-          x, // Return x at it was, we dont want x snapping, only y snapping
-          y: snappedY,
-        };
+      const pixelsPerMinute = props.cellWidth / (props.scale * 60.0);
+      const snapResolutionPx = pixelsPerMinute * props.dragResolutionMinutes;
+
+      function snapXY(x: number, y: number) {
+        const snappedX = Math.round(x / snapResolutionPx) * snapResolutionPx;
+        const snappedY = Math.round(y / rowHeightValue) * rowHeightValue;
+        return { x: snappedX, y: snappedY };
       }
 
       interact(element)
@@ -178,7 +183,7 @@ export default defineComponent({
           },
           modifiers: [
             interact.modifiers.snap({
-              targets: [snapYOnly],
+              targets: [snapXY],
               range: Infinity,
               relativePoints: [{ x: 0, y: 0 }],
               offset: "parent",

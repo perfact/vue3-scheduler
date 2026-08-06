@@ -152,6 +152,7 @@
           :scale="scale"
           :start="start"
           :top="getEventTop(event)"
+          :drag-resolution-minutes="options?.dragResolutionMinutes ?? 5"
           @resize="eventResized"
           @dragged="eventDragged"
           @activate="eventActivated"
@@ -376,7 +377,8 @@ export default defineComponent({
       const origRowOffsets = [...rowOffsets.value];
       const origRowHeights = [...rowHeights.value];
 
-      const minutes = (x / cellWidth.value) * scale.value * 60.0;
+      const rawMinutes = (x / cellWidth.value) * scale.value * 60.0;
+      const minutes = Math.round(rawMinutes);
       timelineEvent.start = new Date(
         timelineEvent.start.setMinutes(
           timelineEvent.start.getMinutes() + minutes,
