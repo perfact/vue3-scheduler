@@ -1,12 +1,17 @@
 <template>
   <div
     ref="elem"
-    :class="['event', event.meta?.class, { 'event--static': !mayDrag }]"
+    :class="[
+      'event',
+      event.meta?.class,
+      { 'event--static': !mayDrag },
+      { '-no-transition': isDropping },
+    ]"
     :style="{
       height: `${rowHeight - 1}px`,
       width: `${getElemWidth(event.start, event.end, cellWidth, scale)}px`,
       left: `${getElemLeft(start, event.start, cellWidth, scale)}px`,
-      top: `${getElemRow(event.identiferIdx, rowHeight)}px`,
+      top: `${top}px`,
     }"
     data-x="0"
     data-y="0"
@@ -40,12 +45,12 @@
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from "vue";
+import { computed, defineComponent, PropType, ref, nextTick } from "vue";
 import interact from "interactjs";
 import { Target } from "@interactjs/types";
 import { watchEffect } from "vue";
 import { Event } from "../types/VueScheduler";
-import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
+import { getElemLeft, getElemWidth } from "../util/position";
 
 export default defineComponent({
   name: "Task",
@@ -70,11 +75,20 @@ export default defineComponent({
       type: Date,
       required: true,
     },
+    top: {
+      type: Number,
+      required: true,
+    },
+    dragResolutionMinutes: {
+      type: Number,
+      default: 5,
+    },
   },
   emits: ["resize", "dragged", "activate"],
   setup(props, { emit }) {
     const elem = ref<Target>();
     const position = { x: 0, y: 0 };
+    const isDropping = ref(false);
 
     // Interaction permissions. An omitted flag means allowed, so events
     // without any permission information behave as before.
@@ -94,6 +108,19 @@ export default defineComponent({
     watchEffect((onCleanup) => {
       const element = elem.value;
       if (!element) return;
+
+      const rowHeightValue = props.rowHeight || 50;
+      const dragResolutionMinutes = props.dragResolutionMinutes ?? 5;
+
+      const pixelsPerMinute = props.cellWidth / (props.scale * 60.0);
+      const snapResolutionPx = pixelsPerMinute * dragResolutionMinutes;
+
+      function snapXY(x: number, y: number) {
+        const snappedX = Math.round(x / snapResolutionPx) * snapResolutionPx;
+        const snappedY = Math.round(y / rowHeightValue) * rowHeightValue;
+        return { x: snappedX, y: snappedY };
+      }
+
       interact(element)
         .resizable({
           enabled: mayResize.value,
@@ -130,12 +157,16 @@ export default defineComponent({
                 `${position.y}px`,
               );
             },
-            end: function (event) {
+            end: async function (event) {
+              // Deactivate transitions for this event
+              isDropping.value = true;
               emit("dragged", {
                 timelineEvent: props.event,
                 x: position.x,
                 y: position.y,
               });
+              // Wait for vue to calculate the new top value
+              await nextTick();
               position.x = 0;
               position.y = 0;
               event.target.style.setProperty(
@@ -146,16 +177,14 @@ export default defineComponent({
                 "--translate-y",
                 `${position.y}px`,
               );
+              requestAnimationFrame(() => {
+                isDropping.value = false;
+              });
             },
           },
           modifiers: [
             interact.modifiers.snap({
-              targets: [
-                interact.snappers.grid({
-                  x: props.cellWidth || 100,
-                  y: props.rowHeight || 50,
-                }),
-              ],
+              targets: [snapXY],
               range: Infinity,
               relativePoints: [{ x: 0, y: 0 }],
               offset: "parent",
@@ -180,22 +209,35 @@ export default defineComponent({
     return {
       getElemWidth,
       getElemLeft,
-      getElemRow,
       elem,
       mayResize,
       mayDrag,
+      isDropping,
     };
   },
 });
 </script>
 <style scoped>
 .event {
-  transition: width 0.05s linear;
+  transition: width 0.05s linear, top 0.2s ease, height 0.2s ease;
   z-index: 10;
   position: absolute;
   display: flex;
   transform: translate(var(--translate-x, 0), var(--translate-y, 0));
   background-color: #3b82f6;
+  box-shadow:
+    1px 0 3px rgba(0, 0, 0, 0.25),
+    -1px 0 3px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.event:hover {
+  z-index: 20;
+  box-shadow: 
+    2px 2px 6px rgba(0, 0, 0, 0.3),
+    -2px 2px 6px rgba(0, 0, 0, 0.3),
+    -2px -2px 6px rgba(0, 0, 0, 0.3),
+    2px -2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Fill the whole block so slot content (background, tooltip activator, hover
@@ -205,6 +247,10 @@ export default defineComponent({
 .event-content {
   width: 100%;
   height: 100%;
+}
+
+.event.-no-transition {
+  transition: none;
 }
 
 .draggable {

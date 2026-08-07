@@ -193,6 +193,28 @@ export default defineComponent({
         },
         labortime: 16
       },
+      {
+        identiferIdx: 1,
+        start: new Date(2024, 1, 1, 18, 0),
+        end: new Date(2024, 1, 1, 24, 0),
+        meta: {
+          title: "Event 3",
+          description: "Event 3 description",
+          class: "event-emerald",
+        },
+        labortime: 8
+      },
+      {
+        identiferIdx: 1,
+        start: new Date(2024, 1, 1, 10, 0),
+        end: new Date(2024, 1, 1, 24, 0),
+        meta: {
+          title: "Event 4",
+          description: "Event 4 description",
+          class: "event-orange",
+        },
+        labortime: 8
+      },
       // Permission demo cases. Omitting a flag means allowed, so the two events
       // above stay fully interactive.
       {
