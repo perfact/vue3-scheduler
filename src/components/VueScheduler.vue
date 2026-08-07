@@ -236,7 +236,7 @@ import { format } from "date-fns";
 import Task from "./Task.vue";
 import { Options, Event, TimeSpan, IdentifierObject } from "../types/VueScheduler";
 import { getElemLeft, getElemRow, getElemWidth } from "../util/position";
-import { calculateEventLayout, nextDragSequence } from "../util/eventlayout";
+import { calculateEventLayout } from "../util/eventlayout";
 
 const DEFAULT_OPTIONS: Options = {
   cellWidth: 100,
@@ -301,6 +301,9 @@ export default defineComponent({
       }
     );
     const dropzones = ref<Array<Target>>();
+    let mostRecentEvent: Event | undefined = undefined;
+    const laneMemory = new WeakMap<Event, number>();
+    const prefferedLanes = new WeakMap<Event, number>();
 
     function generateTimeline() {
       const timeSlots = [];
@@ -366,11 +369,12 @@ export default defineComponent({
       // dragged the event
       const relativeTop = origTop - origRowOffsets[timelineEvent.identiferIdx];
       
-      timelineEvent.preferredLane = Math.max(
+      const preferredLane = Math.max(
         0,
         Math.round(relativeTop / rowHeight.value),
       );
-      timelineEvent.preferredLaneAt = nextDragSequence();
+      mostRecentEvent = timelineEvent;
+      prefferedLanes.set(mostRecentEvent, preferredLane);
     }
 
     function eventDragged({
@@ -424,11 +428,12 @@ export default defineComponent({
       // Calculate the preffered lane base on the position where the user
       // dragged the event
       const relativeTop = newTop - origRowOffsets[newRowIdx];
-      timelineEvent.preferredLane = Math.max(
+      const preferredLane = Math.max(
         0,
         Math.round(relativeTop / rowHeight.value),
       );
-      timelineEvent.preferredLaneAt = nextDragSequence();
+      mostRecentEvent = timelineEvent;
+      prefferedLanes.set(mostRecentEvent, preferredLane);
 
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newRowIdx),
@@ -458,7 +463,14 @@ export default defineComponent({
     }
 
     // Event layout calculation
-    const eventLayout = computed(() => calculateEventLayout(props.events));
+    const eventLayout = computed(
+      () => calculateEventLayout(
+          props.events,
+          laneMemory,
+          mostRecentEvent,
+          prefferedLanes
+        )
+    );
 
     // Calculate lane count for each row
     const rowLaneCounts = computed(() => {

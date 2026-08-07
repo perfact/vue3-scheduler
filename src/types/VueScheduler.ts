@@ -33,11 +33,6 @@ interface Event {
   may_move_time?: boolean;
   may_move_row?: boolean;
   may_resize?: boolean;
-  // used in the layout calculation for overlapping events
-  preferredLane?: number;
-  // Counter indicating when the prefferedLane was set. If this value is bigger
-  // than the value of another event, than this event will win.
-  preferredLaneAt?: number;
 }
 
 interface Options {

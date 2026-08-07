@@ -1,13 +1,5 @@
 import { Event, EventLayout } from "../types/VueScheduler";
 
-let dragSequenceCounter = 0;
-export function nextDragSequence(): number {
-  return ++dragSequenceCounter;
-}
-
-// Remember the assignment of events to lanes
-const laneMemory = new WeakMap<Event, number>();
-
 function overlaps(
   eventAStart: number, eventAEnd: number, eventBStart: number, eventBEnd: number
 ): boolean {
@@ -76,6 +68,50 @@ function compact(mapping: Map<Event, number>): Map<Event, number> {
 }
 
 /**
+ * Calculate the minimal lane counter for a cluster independet from the actual
+ * lane assignment which is faster than cumputing the actual event mapping.
+ */
+function minimalLaneCount(cluster: Event[]): number {
+  const points: { time: number; delta: number }[] = [];
+  cluster.forEach((event) => {
+    points.push({ time: event.start.getTime(), delta: 1 });
+    points.push({ time: event.end.getTime(), delta: -1 });
+  });
+
+  // For equal timestamps, we must process the end timestamps before the
+  // start timestamps. Otherwise the caclulated number of lanes would be too
+  // high.
+  points.sort((a, b) => a.time - b.time || a.delta - b.delta);
+
+  let current = 0;
+  let max = 0;
+  points.forEach((point) => {
+    // Sum the delta values. If all events are behind each other and dont
+    // overlap, then current will switch between 1 and 0. Max will be 1 because
+    // we need 1 lane in this case.
+    // If there are two events that overlap, there will be two start timestamps
+    // before the first end timestamp and current will be 2. Max will be 2 too
+    // in this case.
+    current += point.delta;
+    max = Math.max(max, current);
+  });
+
+  return max;
+}
+
+/**
+ * Compare the number of used lanes with the minimal lane count possible for
+ * the cluster.
+ */
+function isMappingMinimal(
+  cluster: Event[],
+  mapping: Map<Event, number>,
+): boolean {
+  const usedLanes = new Set(cluster.map((event) => mapping.get(event)!));
+  return usedLanes.size === minimalLaneCount(cluster);
+}
+
+/**
  * Calculate the event layout for overlapping events. Currently only lane
  * splitting is supported.
  * 
@@ -92,9 +128,23 @@ function compact(mapping: Map<Event, number>): Map<Event, number> {
  *  Disadvantage: The content of all blocks is not visible at the same time.
  * 
  * @param {Event[]} events - List of events
+ * @param {WeakMap<Event, number>} laneMemory - Mapping of events to lanes
+ *  which contains the previous lane assignments.
+ * @param {Event | undefined} mostRecent - The most recently dragged or resized
+ *  event. The preffered lane of this event will be handled with a higher
+ *  priority if it is possible.
+ * @param {WeakMap<Event, number>} prefferedLanes - Mapping of events to their
+ *  preffered lane, but only the most recently dragged/resized event is
+ *  relevant for now. This alogrithm could be adjusted in the future, so that
+ *  all preferred lanes will be considered if possible.
  * @returns - Returns a mapping of events to event layout
  */
-export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
+export function calculateEventLayout(
+  events: Event[],
+  laneMemory: WeakMap<Event, number>,
+  mostRecent: Event | undefined,
+  prefferedLanes: WeakMap<Event, number>,
+): Map<Event, EventLayout> {
   const layout = new Map<Event, EventLayout>();
   const byRow = new Map<number, Event[]>();
   // Collect events for each row
@@ -111,12 +161,6 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
     );
     const eventClusters = buildOverlappingEventClusters(sorted);
 
-    const mostRecent = rowEvents.find(
-      (event) =>
-        event.preferredLaneAt !== undefined &&
-        event.preferredLaneAt === dragSequenceCounter,
-    );
-
     eventClusters.forEach((cluster) => {
       const containsMostRecent =
         mostRecent !== undefined && cluster.includes(mostRecent);
@@ -129,11 +173,17 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
         // First check if we have a lane memmorized for all events inside the
         // cluster.
         const hasFullMemory = cluster.every((event) => laneMemory.has(event));
-        // If we have all events memmorized, use the memmorized event-lane
-        // mapping. Otherwise build a new mapping with the greedy algorithm.
-        eventLaneMapping = hasFullMemory
+        const memoryMapping = hasFullMemory
           ? new Map(cluster.map((event) => [event, laneMemory.get(event)!]))
-          : buildGreedyEventLaneMapping(cluster);
+          : null;
+
+        // If we have all events memmorized and the memmorized mapping has still
+        // the minimal lane count possible, use the memmorized event-lane
+        // mapping. Otherwise build a new mapping with the greedy algorithm.
+        eventLaneMapping =
+          memoryMapping && isMappingMinimal(cluster, memoryMapping)
+            ? memoryMapping
+            : buildGreedyEventLaneMapping(cluster);
       } else {
         // If our cluster contains the most recent change, then we have to
         // refresh our mapping. We build a new mapping with the greedy algo.
@@ -141,7 +191,7 @@ export function calculateEventLayout(events: Event[]): Map<Event, EventLayout> {
         const laneCount = new Set(eventLaneMapping.values()).size;
         const currentLane = eventLaneMapping.get(mostRecent!)!;
         const desiredLane = Math.min(
-          mostRecent!.preferredLane ?? currentLane,
+          prefferedLanes.get(mostRecent) ?? currentLane,
           laneCount - 1,
         );
         // If our mostRecent change does not have the desired lane, try to

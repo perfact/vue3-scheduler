@@ -110,9 +110,10 @@ export default defineComponent({
       if (!element) return;
 
       const rowHeightValue = props.rowHeight || 50;
+      const dragResolutionMinutes = props.dragResolutionMinutes ?? 5;
 
       const pixelsPerMinute = props.cellWidth / (props.scale * 60.0);
-      const snapResolutionPx = pixelsPerMinute * props.dragResolutionMinutes;
+      const snapResolutionPx = pixelsPerMinute * dragResolutionMinutes;
 
       function snapXY(x: number, y: number) {
         const snappedX = Math.round(x / snapResolutionPx) * snapResolutionPx;
