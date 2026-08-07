@@ -303,7 +303,7 @@ export default defineComponent({
     const dropzones = ref<Array<Target>>();
     let mostRecentEvent: Event | undefined = undefined;
     const laneMemory = new WeakMap<Event, number>();
-    const prefferedLanes = new WeakMap<Event, number>();
+    const preferedLanes = new WeakMap<Event, number>();
 
     function generateTimeline() {
       const timeSlots = [];
@@ -374,7 +374,7 @@ export default defineComponent({
         Math.round(relativeTop / rowHeight.value),
       );
       mostRecentEvent = timelineEvent;
-      prefferedLanes.set(mostRecentEvent, preferredLane);
+      preferedLanes.set(mostRecentEvent, preferredLane);
     }
 
     function eventDragged({
@@ -433,7 +433,7 @@ export default defineComponent({
         Math.round(relativeTop / rowHeight.value),
       );
       mostRecentEvent = timelineEvent;
-      prefferedLanes.set(mostRecentEvent, preferredLane);
+      preferedLanes.set(mostRecentEvent, preferredLane);
 
       timelineEvent.identiferIdx = Math.min(
         Math.max(0, newRowIdx),
@@ -468,7 +468,7 @@ export default defineComponent({
           props.events,
           laneMemory,
           mostRecentEvent,
-          prefferedLanes
+          preferedLanes
         )
     );
 

@@ -133,7 +133,7 @@ function isMappingMinimal(
  * @param {Event | undefined} mostRecent - The most recently dragged or resized
  *  event. The preffered lane of this event will be handled with a higher
  *  priority if it is possible.
- * @param {WeakMap<Event, number>} prefferedLanes - Mapping of events to their
+ * @param {WeakMap<Event, number>} preferedLanes - Mapping of events to their
  *  preffered lane, but only the most recently dragged/resized event is
  *  relevant for now. This alogrithm could be adjusted in the future, so that
  *  all preferred lanes will be considered if possible.
@@ -143,7 +143,7 @@ export function calculateEventLayout(
   events: Event[],
   laneMemory: WeakMap<Event, number>,
   mostRecent: Event | undefined,
-  prefferedLanes: WeakMap<Event, number>,
+  preferedLanes: WeakMap<Event, number>,
 ): Map<Event, EventLayout> {
   const layout = new Map<Event, EventLayout>();
   const byRow = new Map<number, Event[]>();
@@ -191,7 +191,7 @@ export function calculateEventLayout(
         const laneCount = new Set(eventLaneMapping.values()).size;
         const currentLane = eventLaneMapping.get(mostRecent!)!;
         const desiredLane = Math.min(
-          prefferedLanes.get(mostRecent) ?? currentLane,
+          preferedLanes.get(mostRecent) ?? currentLane,
           laneCount - 1,
         );
         // If our mostRecent change does not have the desired lane, try to
